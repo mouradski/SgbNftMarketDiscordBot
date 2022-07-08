@@ -287,6 +287,10 @@ public class SgbNftMarketBot {
 
     private void notifySale(SaleNotification saleNotification) throws IOException {
 
+        if (!production) {
+            return;
+        }
+
         if (saleNotification.getSubscriptions() == null || saleNotification.getSubscriptions().isEmpty()) {
             return;
         }
@@ -329,16 +333,12 @@ public class SgbNftMarketBot {
             embed.setImage(meta.getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
         }
 
-        if (production) {
-            saleNotification.getSubscriptions().forEach(sub -> {
-                TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
-                if (channel != null) {
-                    channel.sendMessage(embed);
-                }
-            });
-        }
-
+        saleNotification.getSubscriptions().forEach(sub -> {
+            TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
+            if (channel != null) {
+                channel.sendMessage(embed);
+            }
+        });
     }
-
-
+    
 }
