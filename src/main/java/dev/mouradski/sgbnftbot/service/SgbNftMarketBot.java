@@ -322,7 +322,7 @@ public class SgbNftMarketBot {
                 .addField(TransactionType.OFFER_ACCEPTED.equals(saleNotification.getTransactionType()) ? "Seller" : "Buyer", saleNotification.getTrigger())
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
                 .addInlineField("Price", saleNotification.getPrice() + " SGB")
-                .addInlineField("Marketplace", saleNotification.getMarketplaceAVirer().split("_")[0])
+                .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
                 .addInlineField("TransactionType", transactionTypeValue)
                 .setUrl(saleNotification.getMarketplaceListingUrl())
                 .setColor(Color.BLUE);
@@ -340,5 +340,5 @@ public class SgbNftMarketBot {
             }
         });
     }
-    
+
 }

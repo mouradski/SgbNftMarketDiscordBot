@@ -47,7 +47,6 @@ public abstract class TransactionPattern {
 
         String buyer = extractBuyer(transaction);
         String seller = extractSeller(transaction);
-        String marketplance = getMarketplace().toString();
         Long tokenId = extractTokenId(transaction);
         Double price = extracePrice(transaction);
         TransactionType transactionType = getTransactionType();
@@ -57,7 +56,8 @@ public abstract class TransactionPattern {
         String trigger = buyer != null ? buyer : seller;
 
         return SaleNotification.builder().contract(nftContract).buyer(buyer).seller(seller)
-                .marketplaceAVirer(marketplance).transactionType(transactionType)
+                .transactionType(transactionType)
+                .marketplace(getMarketplace())
                 .price(price.doubleValue()).tokenId(tokenId)
                 .marketplaceListingUrl(marketplaceListingUrl)
                 .trigger(trigger)

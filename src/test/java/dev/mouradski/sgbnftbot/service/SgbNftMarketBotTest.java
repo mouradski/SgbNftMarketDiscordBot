@@ -37,7 +37,7 @@ public class SgbNftMarketBotTest {
             Assertions.assertEquals(trigger, saleNotification.get().getTrigger());
             Assertions.assertEquals(tokenId, saleNotification.get().getTokenId());
             Assertions.assertEquals(price, saleNotification.get().getPrice());
-            Assertions.assertEquals(marketplace, saleNotification.get().getMarketplaceAVirer());
+            Assertions.assertEquals(marketplace, saleNotification.get().getMarketplace().toString());
             Assertions.assertEquals(transactionType, saleNotification.get().getTransactionType().name());
         }
     }

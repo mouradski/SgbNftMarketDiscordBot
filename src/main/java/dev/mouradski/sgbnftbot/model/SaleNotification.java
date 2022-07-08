@@ -17,7 +17,6 @@ public class SaleNotification {
     private String trigger;
     private Double price;
     private Long tokenId;
-    private String marketplaceAVirer;
     private String marketplaceListingUrl;
     private Marketplace marketplace;
     private TransactionType transactionType;
