@@ -2,6 +2,7 @@
 
 
 ## Run
+Edit src/main/application.properties then
 ```sh
 mvn spring-boot:run
 ```
