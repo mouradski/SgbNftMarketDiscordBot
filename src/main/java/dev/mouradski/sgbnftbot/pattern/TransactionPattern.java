@@ -39,9 +39,11 @@ public abstract class TransactionPattern {
 
     protected abstract String getMarketplaceListingUrl(Transaction transaction) throws IOException;
 
-    protected abstract Double extracePrice(Transaction transaction) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException;
+    protected abstract Double extracePrice(Transaction transaction) throws IOException, ClassNotFoundException,
+            InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException;
 
-    public SaleNotification buildNotification(Transaction transaction) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public SaleNotification buildNotification(Transaction transaction) throws IOException, ClassNotFoundException,
+            InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         String buyer = extractBuyer(transaction);
         String seller = extractSeller(transaction);
@@ -64,15 +66,8 @@ public abstract class TransactionPattern {
 
 
     public boolean matches(Transaction transaction) {
-
-        log.info(getMarketplace().toString());
-        log.info("Gauche current, Droite expected");
         String function = transaction.getInput().substring(0, 10);
         String marketplaceContract = transaction.getTo().toLowerCase();
-
-
-        log.info(function + " vs " + getTransactionFunction());
-        log.info(marketplaceContract + " vs " + getPatternContract());
 
         return function.equalsIgnoreCase(getTransactionFunction())
                 && marketplaceContract.equalsIgnoreCase(getPatternContract()) &&
