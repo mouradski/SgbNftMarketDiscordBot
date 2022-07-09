@@ -72,6 +72,7 @@ public class SgbNftMarketBot {
         });
 
         if (production) {
+
             discordApi = new DiscordApiBuilder().setToken(token).setAllNonPrivilegedIntents()
                     .login().join();
 
@@ -336,7 +337,11 @@ public class SgbNftMarketBot {
         saleNotification.getSubscriptions().forEach(sub -> {
             TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
             if (channel != null) {
-                channel.sendMessage(embed);
+                try {
+                    channel.sendMessage(embed);
+                } catch (Exception e) {
+                    log.error("Unable to send message to channel {}", channel.getIdAsString(), e);
+                }
             }
         });
     }
