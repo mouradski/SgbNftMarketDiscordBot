@@ -24,6 +24,9 @@ public class SgbNftMarketBotTest {
             "0x545c89a5b8823658e5ab666699e6d0d97c98a4ea7881d0d8fb8e10462c9ffd56,0x2972ea6e6cc45c5837ce909def032dd325b48415,0x1e3cec41608c438ca7524d6fb042f905c46ecbae,3738,132.6,NFTSO,BUY",
             "0x6fa19da322f507cce3c1707493de576988ce21d359acd007593e4ffb4f4f038f,0x4f52a074de9f2651d2f711fee63fee9e3b439a7e,0x1e3cec41608c438ca7524d6fb042f905c46ecbae,964,500,SparklesNFT,BUY",
             "0x15446be772557f9ad441544b381b243baf7b9fd86a0dead0cd0e9760b34abefa,0xe6e7db32df87f75609fb78d5f52753c2d3d98d84,0x5558e1d55e8619ce93498cd3113435515d48eb03,1907,315,SparklesNFT,OFFER_ACCEPTED",
+            "0x97b10637cc810a987caaa377ab1bdfd91e7092a31d66b00317b7553b203f29c5,0x2d086e61267a57503dd4aa1bb4e807bc50fa7ee1,0xce9de01156bc1281bac9254e49ba5d325bf2f6d8,1834,500,SparklesNFT,BUY",
+            "0x5eb2fa413f688d5cc15f2e55b5d3d883351f5afb56c6756badfbfac8ad1f4802,0xcdb019c0990c033724da55f5a04be6fd6ec1809d,0x17b351b19f1336887029aa24140eac661004e369,13896,581.25,SparklesNFT,OFFER_ACCEPTED",
+            "0x33a15d8174a1d2e7b48d77594002658e8f5157ee62bc40fe4be80fde3bc758c2,0x279a222a18c033124ab02290ddec97912a8b7185,0xdaaed8d94976124177d7e53778c65f18adf0167d,7274,558,SparklesNFT,OFFER_ACCEPTED",
             "0xce5781c10cf196a6b59683b9976b4509e677210c4d5506a7df53c5713b0c24d9,,,,,,",
             "0x97321d554675b4c0e85ce99a9abeb77c4148d6522657033572ab327631a5d514,,,,,,"})
     public void testProcess(String transactionHash, String contract, String trigger, Long tokenId, Double price, String marketplace, String transactionType) throws Exception {
