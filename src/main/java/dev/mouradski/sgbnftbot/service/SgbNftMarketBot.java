@@ -341,7 +341,7 @@ public class SgbNftMarketBot {
                     try {
                         channel.sendMessage(embed).get();
                     } catch (Exception e) {
-                        log.error("Unable to send message to channel {}", channel.getIdAsString(), e);
+                        log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
                     }
                 });
             }

@@ -61,6 +61,7 @@ public abstract class TransactionPattern {
                 .price(price.doubleValue()).tokenId(tokenId)
                 .marketplaceListingUrl(marketplaceListingUrl)
                 .trigger(trigger)
+                .transactionHash(transaction.getHash())
                 .build();
     }
 

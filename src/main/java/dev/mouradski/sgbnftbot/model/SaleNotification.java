@@ -22,4 +22,5 @@ public class SaleNotification {
     private TransactionType transactionType;
     private String buyer;
     private String seller;
+    private String transactionHash;
 }
