@@ -54,6 +54,7 @@ public class SgbNftMarketBot {
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
+    private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
     private DiscordApi discordApi;
 
@@ -334,12 +335,15 @@ public class SgbNftMarketBot {
 
         saleNotification.getSubscriptions().forEach(sub -> {
             TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
+
             if (channel != null) {
-                try {
-                    channel.sendMessage(embed).get();
-                } catch (Exception e) {
-                    log.error("Unable to send message to channel {}", channel.getIdAsString(), e);
-                }
+                senderExecutor.execute(() -> {
+                    try {
+                        channel.sendMessage(embed).get();
+                    } catch (Exception e) {
+                        log.error("Unable to send message to channel {}", channel.getIdAsString(), e);
+                    }
+                });
             }
         });
     }
