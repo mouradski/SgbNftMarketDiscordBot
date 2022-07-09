@@ -66,7 +66,6 @@ public class SgbNftMarketBot {
 
     @PostConstruct
     public void start() {
-
         subscriptionRepository.findAll().forEach(subscription -> {
             contracts.add(subscription.getContract());
         });
@@ -164,7 +163,7 @@ public class SgbNftMarketBot {
 
             SaleNotification saleNotification = transactionPattern.buildNotification(transaction);
 
-            Set<Subscription> subscriptions = subscriptionRepository.findByContract(saleNotification.getContract()).stream().collect(Collectors.toSet());
+            Set<Subscription> subscriptions = subscriptionRepository.findByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
             saleNotification.setSubscriptions(subscriptions);
 
             notifySale(saleNotification);
@@ -193,7 +192,7 @@ public class SgbNftMarketBot {
             return;
         }
 
-        List<Subscription> subscriptionList = subscriptionRepository.findByContract(contract);
+        List<Subscription> subscriptionList = subscriptionRepository.findByContract(contract.toLowerCase());
 
         if (!subscriptionList.isEmpty()) {
 

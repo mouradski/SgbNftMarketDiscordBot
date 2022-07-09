@@ -50,7 +50,7 @@ public abstract class TransactionPattern {
         Long tokenId = extractTokenId(transaction);
         Double price = extracePrice(transaction);
         TransactionType transactionType = getTransactionType();
-        String nftContract = extractNftContract(transaction);
+        String nftContract = extractNftContract(transaction).toLowerCase();
         String marketplaceListingUrl = getMarketplaceListingUrl(transaction);
 
         String trigger = buyer != null ? buyer : seller;
