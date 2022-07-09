@@ -53,8 +53,7 @@ public class SgbNftMarketBot {
     }
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
-
-    private ExecutorService processExecutor = Executors.newFixedThreadPool(4);
+    private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
 
     private DiscordApi discordApi;
 
@@ -173,9 +172,9 @@ public class SgbNftMarketBot {
         }
     }
 
-     public void subscribeContract(String channel, String contract, Server server) throws IOException {
-         subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server);
-     }
+    public void subscribeContract(String channel, String contract, Server server) throws IOException {
+        subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server);
+    }
 
     public void subscribeContract(TextChannel channel, String contract, Server server) throws IOException {
 
@@ -337,7 +336,7 @@ public class SgbNftMarketBot {
             TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
             if (channel != null) {
                 try {
-                    channel.sendMessage(embed);
+                    channel.sendMessage(embed).get();
                 } catch (Exception e) {
                     log.error("Unable to send message to channel {}", channel.getIdAsString(), e);
                 }
