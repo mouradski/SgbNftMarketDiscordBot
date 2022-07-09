@@ -68,12 +68,6 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
                 .findFirst().orElse(new BigInteger("0"));
 
 
-        if (value.doubleValue() > 0) {
-            return value.doubleValue() / 1000 ;
-        }
-
-
-
-        return new BigInteger(TypeDecoder.instantiateType("uint256",web3.ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().get(13).getData()).getValue().toString()).divide(new BigInteger("1000000000000000")).doubleValue() / 1000;
+        return value.doubleValue() / 1000 ;
     }
 }
