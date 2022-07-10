@@ -11,7 +11,6 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -51,9 +50,6 @@ public class SgbNftMarketBot {
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
-    @Value("${app.production:false}")
-    private boolean production;
-
     public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
                            @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired(required = false) DiscordApi discordApi) {
@@ -74,7 +70,7 @@ public class SgbNftMarketBot {
             contracts.add(subscription.getContract());
         });
 
-        if (production) {
+        if (discordApi != null) {
             discordApi.addMessageCreateListener(event -> {
                 if (event.getMessageContent().contains("!nftsales subscribe")) {
                     processSubscribeCommand(event);
@@ -111,6 +107,7 @@ public class SgbNftMarketBot {
             }
         }
     }
+
 
     private void processHelpCommand(MessageCreateEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
@@ -292,7 +289,7 @@ public class SgbNftMarketBot {
 
     private void notifySale(SaleNotification saleNotification) throws IOException {
 
-        if (!production) {
+        if (discordApi == null) {
             return;
         }
 
