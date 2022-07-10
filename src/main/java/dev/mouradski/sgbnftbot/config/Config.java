@@ -18,7 +18,6 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
 @Configuration
 public class Config {
@@ -57,7 +56,7 @@ public class Config {
 
     @Bean
     @ConditionalOnProperty(value = "app.production")
-    public DiscordApi discordApi() throws ExecutionException, InterruptedException {
+    public DiscordApi discordApi() {
         return new DiscordApiBuilder().setToken(discordToken).setAllNonPrivilegedIntents()
                 .login().join();
     }

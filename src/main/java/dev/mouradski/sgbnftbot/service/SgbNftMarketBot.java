@@ -2,6 +2,7 @@ package dev.mouradski.sgbnftbot.service;
 
 import dev.mouradski.sgbnftbot.model.*;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
+import dev.mouradski.sgbnftbot.repository.SaleNotificationLogRepository;
 import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
@@ -10,13 +11,16 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +37,8 @@ public class SgbNftMarketBot {
 
     private SubscriptionRepository subscriptionRepository;
 
+    private SaleNotificationLogRepository saleNotificationLogRepository;
+
     private IpfsHelper ipfsService;
 
     private EthHelper ethHelper;
@@ -45,17 +51,21 @@ public class SgbNftMarketBot {
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
-    private Set<String> contracts = new HashSet<>();
+    @Value("${app.production:false}")
+    private boolean production;
 
     public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
-                           @Autowired(required = false) DiscordApi discordApi) {
+                           @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired DiscordApi discordApi) {
         this.subscriptionRepository = subscriptionRepository;
         this.ipfsService = ipfsService;
         this.ethHelper = ethHelper;
         this.transactionPatterns = transactionPatterns;
+        this.saleNotificationLogRepository = saleNotificationLogRepository;
         this.discordApi = discordApi;
     }
+
+    private Set<String> contracts = new HashSet<>();
 
 
     @PostConstruct
@@ -64,7 +74,7 @@ public class SgbNftMarketBot {
             contracts.add(subscription.getContract());
         });
 
-        if (discordApi != null) {
+        if (production) {
             discordApi.addMessageCreateListener(event -> {
                 if (event.getMessageContent().contains("!nftsales subscribe")) {
                     processSubscribeCommand(event);
@@ -101,7 +111,6 @@ public class SgbNftMarketBot {
             }
         }
     }
-
 
     private void processHelpCommand(MessageCreateEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
@@ -277,7 +286,7 @@ public class SgbNftMarketBot {
 
     private void notifySale(SaleNotification saleNotification) throws IOException {
 
-        if (discordApi == null) {
+        if (!production) {
             return;
         }
 
@@ -330,12 +339,25 @@ public class SgbNftMarketBot {
                 senderExecutor.execute(() -> {
                     try {
                         channel.sendMessage(embed).get();
+                        persistSaleNotification(saleNotification, subscription, channel);
                     } catch (Exception e) {
                         log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
                     }
                 });
             }
         });
+    }
+
+    private void persistSaleNotification(SaleNotification saleNotification, Subscription subscription, TextChannel channel) {
+        saleNotificationLogRepository.save(SaleNotificationLog.builder().transactionHash(saleNotification.getTransactionHash())
+                .channelId(channel.getIdAsString()).serverId(subscription.getServerName()).date(OffsetDateTime.now())
+                .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).build());
+    }
+
+
+    @Scheduled(fixedDelay = 43200000)
+    public void purgeLogs() {
+        saleNotificationLogRepository.deleteByDateBefore(OffsetDateTime.now().minusDays(10));
     }
 
 }
