@@ -356,19 +356,19 @@ public class SgbNftMarketBot {
                     try {
                         channel.sendMessage(embed).get();
                         if (saleNotificationLog == null) {
-                            persistNewSaleNotification(saleNotification, subscription, channel, false);
+                            persistNewSaleNotificationLog(saleNotification, subscription, channel, false);
                         }
                         saleNotificationLogRepository.stopRetry(saleNotification.getTransactionHash(), channel.getIdAsString());
                     } catch (Exception e) {
                         log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
-                        persistNewSaleNotification(saleNotification, subscription, channel, true);
+                        persistNewSaleNotificationLog(saleNotification, subscription, channel, true);
                     }
                 });
             }
         });
     }
 
-    private void persistNewSaleNotification(SaleNotification saleNotification, Subscription subscription, TextChannel channel, boolean error) {
+    private void persistNewSaleNotificationLog(SaleNotification saleNotification, Subscription subscription, TextChannel channel, boolean error) {
         saleNotificationLogRepository.save(SaleNotificationLog.builder().transactionHash(saleNotification.getTransactionHash())
                 .channelId(channel.getIdAsString()).serverId(subscription.getServerName()).date(OffsetDateTime.now())
                 .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).failed(error).retry(error ? 2 : 0).build());
