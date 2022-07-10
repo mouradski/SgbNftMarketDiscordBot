@@ -1,6 +1,9 @@
 package dev.mouradski.sgbnftbot.config;
 
+import org.javacord.api.DiscordApi;
+import org.javacord.api.DiscordApiBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -15,12 +18,16 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 @Configuration
 public class Config {
 
     @Value("${web3.provider}")
     private String wssProviderUrl;
+
+    @Value("${discord.token}")
+    private String discordToken;
 
     @Bean
     public RestTemplate restTemplate() {
@@ -46,5 +53,12 @@ public class Config {
         webSocketService.connect();
 
         return Web3j.build(webSocketService);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "app.production")
+    public DiscordApi discordApi() throws ExecutionException, InterruptedException {
+        return new DiscordApiBuilder().setToken(discordToken).setAllNonPrivilegedIntents()
+                .login().join();
     }
 }

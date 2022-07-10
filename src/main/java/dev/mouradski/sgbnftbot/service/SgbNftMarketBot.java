@@ -5,13 +5,11 @@ import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
 import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
-import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
@@ -39,29 +37,25 @@ public class SgbNftMarketBot {
 
     private EthHelper ethHelper;
 
+    private DiscordApi discordApi;
+
     private List<TransactionPattern> transactionPatterns;
-
-    @Value("${app.production:false}")
-    private boolean production;
-
-    public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
-                           @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns) {
-        this.subscriptionRepository = subscriptionRepository;
-        this.ipfsService = ipfsService;
-        this.ethHelper = ethHelper;
-        this.transactionPatterns = transactionPatterns;
-    }
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
-    private DiscordApi discordApi;
-
     private Set<String> contracts = new HashSet<>();
 
-    @Value("${discord.token}")
-    private String token;
+    public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
+                           @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
+                           @Autowired(required = false) DiscordApi discordApi) {
+        this.subscriptionRepository = subscriptionRepository;
+        this.ipfsService = ipfsService;
+        this.ethHelper = ethHelper;
+        this.transactionPatterns = transactionPatterns;
+        this.discordApi = discordApi;
+    }
 
 
     @PostConstruct
@@ -70,11 +64,7 @@ public class SgbNftMarketBot {
             contracts.add(subscription.getContract());
         });
 
-        if (production) {
-
-            discordApi = new DiscordApiBuilder().setToken(token).setAllNonPrivilegedIntents()
-                    .login().join();
-
+        if (discordApi != null) {
             discordApi.addMessageCreateListener(event -> {
                 if (event.getMessageContent().contains("!nftsales subscribe")) {
                     processSubscribeCommand(event);
@@ -287,7 +277,7 @@ public class SgbNftMarketBot {
 
     private void notifySale(SaleNotification saleNotification) throws IOException {
 
-        if (!production) {
+        if (discordApi == null) {
             return;
         }
 
