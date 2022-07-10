@@ -2,6 +2,7 @@ package dev.mouradski.sgbnftbot.service;
 
 import dev.mouradski.sgbnftbot.model.*;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
+import dev.mouradski.sgbnftbot.repository.SaleNotificationLogRepository;
 import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
@@ -11,12 +12,14 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +36,8 @@ public class SgbNftMarketBot {
 
     private SubscriptionRepository subscriptionRepository;
 
+    private SaleNotificationLogRepository saleNotificationLogRepository;
+
     private IpfsHelper ipfsService;
 
     private EthHelper ethHelper;
@@ -45,17 +50,18 @@ public class SgbNftMarketBot {
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
-    private Set<String> contracts = new HashSet<>();
-
     public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
-                           @Autowired(required = false) DiscordApi discordApi) {
+                           @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired(required = false) DiscordApi discordApi) {
         this.subscriptionRepository = subscriptionRepository;
         this.ipfsService = ipfsService;
         this.ethHelper = ethHelper;
         this.transactionPatterns = transactionPatterns;
+        this.saleNotificationLogRepository = saleNotificationLogRepository;
         this.discordApi = discordApi;
     }
+
+    private Set<String> contracts = new HashSet<>();
 
 
     @PostConstruct
@@ -134,8 +140,14 @@ public class SgbNftMarketBot {
         }
     }
 
-    public Optional<SaleNotification> process(String transactionHash) throws IOException {
-        SaleNotification saleNotification = process(ethHelper.getTransaction(transactionHash));
+    public Optional<SaleNotification> process(String transactionHash) {
+        SaleNotification saleNotification = null;
+
+        try {
+            saleNotification = process(ethHelper.getTransaction(transactionHash));
+        } catch (IOException e) {
+            log.error("Error retreiving transaction {}", transactionHash, e);
+        }
 
         if (saleNotification == null) {
             return Optional.empty();
@@ -328,14 +340,47 @@ public class SgbNftMarketBot {
 
             if (channel != null) {
                 senderExecutor.execute(() -> {
+                    SaleNotificationLog saleNotificationLog = saleNotificationLogRepository
+                            .getByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString())
+                            .orElse(null);
+
+                    if (saleNotificationLog != null) {
+                        saleNotificationLog.setRetry(saleNotificationLog.getRetry() > 0 ? saleNotificationLog.getRetry() - 1 : 0);
+                        saleNotificationLog.setDate(OffsetDateTime.now());
+                        saleNotificationLogRepository.save(saleNotificationLog);
+                    }
+
                     try {
                         channel.sendMessage(embed).get();
+                        if (saleNotificationLog == null) {
+                            persistNewSaleNotificationLog(saleNotification, subscription, channel, false);
+                        }
+                        saleNotificationLogRepository.stopRetry(saleNotification.getTransactionHash(), channel.getIdAsString());
                     } catch (Exception e) {
                         log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
+                        persistNewSaleNotificationLog(saleNotification, subscription, channel, true);
                     }
                 });
             }
         });
+    }
+
+    private void persistNewSaleNotificationLog(SaleNotification saleNotification, Subscription subscription, TextChannel channel, boolean error) {
+        saleNotificationLogRepository.save(SaleNotificationLog.builder().transactionHash(saleNotification.getTransactionHash())
+                .channelId(channel.getIdAsString()).serverId(subscription.getServerName()).date(OffsetDateTime.now())
+                .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).failed(error).retry(error ? 2 : 0).build());
+    }
+
+    @Scheduled(fixedDelay = 43200000)
+    public void purgeLogs() {
+        saleNotificationLogRepository.deleteByDateBefore(OffsetDateTime.now().minusDays(10));
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    public void replyFailedNotifications() {
+        saleNotificationLogRepository.findByFailedIsTrueAndRetryGreaterThan(0).stream()
+                .map(SaleNotificationLog::getTransactionHash)
+                .forEach(this::process);
     }
 
 }
