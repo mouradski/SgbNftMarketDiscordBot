@@ -309,9 +309,8 @@ public class SgbNftMarketBot {
 
         }
 
-        Subscription subscription = saleNotification.getSubscriptions().stream().findFirst().get();
 
-        String tokenName = subscription.getTokenName();
+        String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
         String metaIpfsUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId()).replace("https://ipfs.io/ipfs/", "ipfs://");
 
@@ -335,8 +334,8 @@ public class SgbNftMarketBot {
             embed.setImage(meta.getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
         }
 
-        saleNotification.getSubscriptions().forEach(sub -> {
-            TextChannel channel = discordApi.getTextChannelById(sub.getChannelId()).orElse(null);
+        saleNotification.getSubscriptions().forEach(subscription -> {
+            TextChannel channel = discordApi.getTextChannelById(subscription.getChannelId()).orElse(null);
 
             if (channel != null) {
                 senderExecutor.execute(() -> {
