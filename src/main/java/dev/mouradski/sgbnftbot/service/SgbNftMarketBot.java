@@ -101,7 +101,7 @@ public class SgbNftMarketBot {
                     try {
                         subscribeContract(event.getChannel(), contract.toLowerCase(), event.getServer().orElse(null));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("Error subscribing contract : {}, channelId : {}", contract, event.getChannel().getIdAsString(), e);
                     }
                 });
             }
