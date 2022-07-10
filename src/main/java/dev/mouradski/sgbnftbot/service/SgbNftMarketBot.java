@@ -339,9 +339,14 @@ public class SgbNftMarketBot {
 
             if (channel != null) {
                 senderExecutor.execute(() -> {
-                    SaleNotificationLog saleNotificationLog = saleNotificationLogRepository
-                            .getByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString())
-                            .orElse(null);
+                    List<SaleNotificationLog> saleNotificationLogs = saleNotificationLogRepository
+                            .findByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString());
+
+                    SaleNotificationLog saleNotificationLog = null;
+
+                    if (saleNotificationLogs.size() > 0) {
+                        saleNotificationLog = saleNotificationLogs.get(0);
+                    }
 
                     if (saleNotificationLog != null) {
                         saleNotificationLog.setRetry(saleNotificationLog.getRetry() > 0 ? saleNotificationLog.getRetry() - 1 : 0);

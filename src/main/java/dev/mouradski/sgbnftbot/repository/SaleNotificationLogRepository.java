@@ -19,7 +19,7 @@ public interface SaleNotificationLogRepository extends JpaRepository<SaleNotific
     List<SaleNotificationLog> findByContract(String contract);
     List<SaleNotificationLog> findByTransactionHash(String transactionHash);
     List<SaleNotificationLog> findByContractAndChannelIdAndRetryGreaterThan(String contract, String channelId, Integer retry);
-    Optional<SaleNotificationLog> getByTransactionHashAndChannelIdAndFailedIsTrue(String transactionHash, String channelId);
+    List<SaleNotificationLog> findByTransactionHashAndChannelIdAndFailedIsTrue(String transactionHash, String channelId);
 
     @Modifying
     @Query("update SaleNotificationLog sn set sn.retry = 0, sn.failed = false where sn.transactionHash = ?1 and sn.channelId = ?2")
