@@ -28,4 +28,6 @@ public class SaleNotificationLog {
     private String channelId;
     private String serverId;
     private OffsetDateTime date;
+    private Integer retry;
+    private boolean failed;
 }

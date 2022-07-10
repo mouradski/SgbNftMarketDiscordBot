@@ -56,7 +56,7 @@ public class SgbNftMarketBot {
 
     public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
-                           @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired DiscordApi discordApi) {
+                           @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired(required = false) DiscordApi discordApi) {
         this.subscriptionRepository = subscriptionRepository;
         this.ipfsService = ipfsService;
         this.ethHelper = ethHelper;
@@ -143,8 +143,14 @@ public class SgbNftMarketBot {
         }
     }
 
-    public Optional<SaleNotification> process(String transactionHash) throws IOException {
-        SaleNotification saleNotification = process(ethHelper.getTransaction(transactionHash));
+    public Optional<SaleNotification> process(String transactionHash) {
+        SaleNotification saleNotification = null;
+
+        try {
+            saleNotification = process(ethHelper.getTransaction(transactionHash));
+        } catch (IOException e) {
+            log.error("Error retreiving transaction {}", transactionHash, e);
+        }
 
         if (saleNotification == null) {
             return Optional.empty();
@@ -337,27 +343,47 @@ public class SgbNftMarketBot {
 
             if (channel != null) {
                 senderExecutor.execute(() -> {
+                    SaleNotificationLog saleNotificationLog = saleNotificationLogRepository
+                            .getByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString())
+                            .orElse(null);
+
+                    if (saleNotificationLog != null) {
+                        saleNotificationLog.setRetry(saleNotificationLog.getRetry() > 0 ? saleNotificationLog.getRetry() - 1 : 0);
+                        saleNotificationLog.setDate(OffsetDateTime.now());
+                        saleNotificationLogRepository.save(saleNotificationLog);
+                    }
+
                     try {
                         channel.sendMessage(embed).get();
-                        persistSaleNotification(saleNotification, subscription, channel);
+                        if (saleNotificationLog == null) {
+                            persistNewSaleNotification(saleNotification, subscription, channel, false);
+                        }
+                        saleNotificationLogRepository.stopRetry(saleNotification.getTransactionHash(), channel.getIdAsString());
                     } catch (Exception e) {
                         log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
+                        persistNewSaleNotification(saleNotification, subscription, channel, true);
                     }
                 });
             }
         });
     }
 
-    private void persistSaleNotification(SaleNotification saleNotification, Subscription subscription, TextChannel channel) {
+    private void persistNewSaleNotification(SaleNotification saleNotification, Subscription subscription, TextChannel channel, boolean error) {
         saleNotificationLogRepository.save(SaleNotificationLog.builder().transactionHash(saleNotification.getTransactionHash())
                 .channelId(channel.getIdAsString()).serverId(subscription.getServerName()).date(OffsetDateTime.now())
-                .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).build());
+                .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).failed(error).retry(error ? 2 : 0).build());
     }
-
 
     @Scheduled(fixedDelay = 43200000)
     public void purgeLogs() {
         saleNotificationLogRepository.deleteByDateBefore(OffsetDateTime.now().minusDays(10));
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    public void replyFailedNotifications() {
+        saleNotificationLogRepository.findByFailedIsTrueAndRetryGreaterThan(0).stream()
+                .map(SaleNotificationLog::getTransactionHash)
+                .forEach(this::process);
     }
 
 }
