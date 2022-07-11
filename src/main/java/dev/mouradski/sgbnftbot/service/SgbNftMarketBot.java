@@ -355,7 +355,7 @@ public class SgbNftMarketBot {
                     }
 
                     try {
-                        channel.sendMessage(embed).get();
+                        channel.sendMessage(embed).join();
                         if (saleNotificationLog == null) {
                             persistNewSaleNotificationLog(saleNotification, subscription, channel, false);
                         }
