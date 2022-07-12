@@ -23,4 +23,7 @@ public class SaleNotification {
     private String buyer;
     private String seller;
     private String transactionHash;
+
+    private String imageUrl;
+    private byte[] imageContent;
 }

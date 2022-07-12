@@ -1,13 +1,12 @@
 package dev.mouradski.sgbnftbot.service;
 
-import dev.mouradski.sgbnftbot.model.*;
+import dev.mouradski.sgbnftbot.model.Meta;
+import dev.mouradski.sgbnftbot.model.SaleNotification;
+import dev.mouradski.sgbnftbot.model.Subscription;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
-import dev.mouradski.sgbnftbot.repository.SaleNotificationLogRepository;
-import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
@@ -20,7 +19,6 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,9 +33,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SgbNftMarketBot {
 
-    private SubscriptionRepository subscriptionRepository;
+    private SubscriptionService subscriptionService;
 
-    private SaleNotificationLogRepository saleNotificationLogRepository;
+    private SaleNotificationService saleNotificationService;
 
     private IpfsHelper ipfsService;
 
@@ -50,14 +48,14 @@ public class SgbNftMarketBot {
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
 
-    public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
+    public SgbNftMarketBot(@Autowired SubscriptionService subscriptionService, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
-                           @Autowired SaleNotificationLogRepository saleNotificationLogRepository, @Autowired(required = false) DiscordApi discordApi) {
-        this.subscriptionRepository = subscriptionRepository;
+                           @Autowired SaleNotificationService saleNotificationService, @Autowired(required = false) DiscordApi discordApi) {
+        this.subscriptionService = subscriptionService;
         this.ipfsService = ipfsService;
         this.ethHelper = ethHelper;
         this.transactionPatterns = transactionPatterns;
-        this.saleNotificationLogRepository = saleNotificationLogRepository;
+        this.saleNotificationService = saleNotificationService;
         this.discordApi = discordApi;
     }
 
@@ -66,7 +64,7 @@ public class SgbNftMarketBot {
 
     @PostConstruct
     public void start() {
-        subscriptionRepository.findAll().forEach(subscription -> {
+        subscriptionService.getAll().forEach(subscription -> {
             contracts.add(subscription.getContract());
         });
 
@@ -107,7 +105,6 @@ public class SgbNftMarketBot {
             }
         }
     }
-
 
     private void processHelpCommand(MessageCreateEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
@@ -165,7 +162,8 @@ public class SgbNftMarketBot {
 
             SaleNotification saleNotification = transactionPattern.buildNotification(transaction);
 
-            Set<Subscription> subscriptions = subscriptionRepository.findByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
+            Set<Subscription> subscriptions = subscriptionService.getByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
+
             saleNotification.setSubscriptions(subscriptions);
 
             notifySale(saleNotification);
@@ -181,43 +179,7 @@ public class SgbNftMarketBot {
 
     public void subscribeContract(TextChannel channel, String contract, Server server) throws IOException {
 
-        SubscriptionId subscriptionId = SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build();
-
-        if (subscriptionRepository.existsById(subscriptionId)) {
-
-            EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("Already subscribed to " + subscriptionRepository.findById(subscriptionId).get().getTokenName())
-                    .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
-                    .setColor(Color.BLUE);
-            channel.sendMessage(embed);
-
-            return;
-        }
-
-        List<Subscription> subscriptionList = subscriptionRepository.findByContract(contract.toLowerCase());
-
-        if (!subscriptionList.isEmpty()) {
-
-            Subscription firstSubscription = subscriptionList.get(0);
-
-            Subscription newSubscription = Subscription.builder()
-                    .imageBaseUrl(firstSubscription.getImageBaseUrl())
-                    .imageExtension(firstSubscription.getImageExtension())
-                    .contract(contract)
-                    .serverName(server == null ? null : server.getName())
-                    .channelId(channel.getIdAsString())
-                    .tokenName(firstSubscription.getTokenName()).build();
-
-            subscriptionRepository.save(newSubscription);
-
-            EmbedBuilder nembed = new EmbedBuilder()
-                    .setTitle("Subscription successfully !")
-                    .addField("Project Name", newSubscription.getTokenName())
-                    .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
-                    .setColor(Color.BLUE);
-
-            channel.sendMessage(nembed);
-
+        if (subscriptionService.subscribeContract(contract, channel, server)) {
             return;
         }
 
@@ -228,11 +190,9 @@ public class SgbNftMarketBot {
             nftName = meta.getName().replaceAll("#[0-9]+", "").replace("-", "").trim();
         }
 
-        Subscription subscription = buildSubscription(contract, nftName, server, channel);
+        subscriptionService.subscribeContract(contract, nftName, channel, server);
 
-        subscriptionRepository.save(subscription);
         contracts.add(contract);
-
     }
 
 
@@ -252,39 +212,8 @@ public class SgbNftMarketBot {
         return ipfsService.getMeta(metaIpfsUri);
     }
 
-    private Subscription buildSubscription(String contract, String nftName, Server server, TextChannel channel) {
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("Subscription successfully !")
-                .addField("Project Name", nftName)
-                .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
-                .setColor(Color.BLUE);
-
-        Subscription subscription = Subscription.builder()
-                .channelId(channel.getIdAsString()).contract(contract)
-                .imageExtension(null).imageBaseUrl(null)
-                .serverName(server == null ? null : server.getName()).tokenName(nftName).build();
-
-
-        channel.sendMessage(embed);
-
-        return subscription;
-    }
-
-
     private void unsubscribe(TextChannel channel, String contract) {
-
-        Subscription subscription = subscriptionRepository.findById(SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract.toLowerCase()).build()).orElse(null);
-
-        if (subscription != null) {
-            EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("Unsubscribed successfully !")
-                    .addField("Project Name", subscription.getTokenName())
-                    .setColor(Color.BLUE);
-
-            channel.sendMessage(embed);
-        }
-
-        subscriptionRepository.deleteById(SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build());
+        subscriptionService.unsubscribe(channel, contract);
     }
 
     private void notifySale(SaleNotification saleNotification) throws IOException {
@@ -297,19 +226,6 @@ public class SgbNftMarketBot {
             return;
         }
 
-        String transactionTypeValue = null;
-
-        switch (saleNotification.getTransactionType()) {
-            case OFFER_ACCEPTED:
-                transactionTypeValue = "Offer Accepted";
-                break;
-            case BUY:
-            default:
-                transactionTypeValue = "Buy";
-
-        }
-
-
         String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
         String metaIpfsUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId()).replace("https://ipfs.io/ipfs/", "ipfs://");
@@ -318,70 +234,24 @@ public class SgbNftMarketBot {
 
         byte[] imageContent = ipfsService.get(meta.getImage());
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
-                .addField(TransactionType.OFFER_ACCEPTED.equals(saleNotification.getTransactionType()) ? "Seller" : "Buyer", saleNotification.getTrigger())
-                .addInlineField("Token ID", saleNotification.getTokenId().toString())
-                .addInlineField("Price", saleNotification.getPrice() + " SGB")
-                .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
-                .addInlineField("TransactionType", transactionTypeValue)
-                .setUrl(saleNotification.getMarketplaceListingUrl())
-                .setColor(Color.BLUE);
-
-        if (imageContent != null) {
-            embed.setImage(imageContent);
-        } else {
-            embed.setImage(meta.getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
-        }
+        saleNotification.setImageContent(imageContent);
+        saleNotification.setImageUrl(meta.getImage());
 
         saleNotification.getSubscriptions().forEach(subscription -> {
             TextChannel channel = discordApi.getTextChannelById(subscription.getChannelId()).orElse(null);
-
-            if (channel != null) {
-                    List<SaleNotificationLog> saleNotificationLogs = saleNotificationLogRepository
-                            .findByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString());
-
-                    SaleNotificationLog saleNotificationLog = null;
-
-                    if (saleNotificationLogs.size() > 0) {
-                        saleNotificationLog = saleNotificationLogs.get(0);
-                    }
-
-                    if (saleNotificationLog != null) {
-                        saleNotificationLog.setRetry(saleNotificationLog.getRetry() > 0 ? saleNotificationLog.getRetry() - 1 : 0);
-                        saleNotificationLog.setDate(OffsetDateTime.now());
-                        saleNotificationLogRepository.save(saleNotificationLog);
-                    }
-
-                    try {
-                        channel.sendMessage(embed).join();
-                        if (saleNotificationLog == null) {
-                            persistNewSaleNotificationLog(saleNotification, subscription, channel, false);
-                        }
-                        saleNotificationLogRepository.stopRetry(saleNotification.getTransactionHash(), channel.getIdAsString());
-                    } catch (Exception e) {
-                        log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
-                        persistNewSaleNotificationLog(saleNotification, subscription, channel, true);
-                    }
-            }
+            saleNotificationService.sendSaleNotificationLog(channel, subscription, saleNotification, tokenName);
         });
     }
 
-    private void persistNewSaleNotificationLog(SaleNotification saleNotification, Subscription subscription, TextChannel channel, boolean error) {
-        saleNotificationLogRepository.save(SaleNotificationLog.builder().transactionHash(saleNotification.getTransactionHash())
-                .channelId(channel.getIdAsString()).serverId(subscription.getServerName()).date(OffsetDateTime.now())
-                .trigger(saleNotification.getTrigger()).contract(saleNotification.getContract()).failed(error).retry(error ? 2 : 0).build());
-    }
 
     @Scheduled(fixedDelay = 43200000)
     public void purgeLogs() {
-        saleNotificationLogRepository.deleteByDateBefore(OffsetDateTime.now().minusDays(10));
+        saleNotificationService.purgeLogs();
     }
 
     @Scheduled(fixedDelay = 60000)
     public void replyFailedNotifications() {
-        saleNotificationLogRepository.findByFailedIsTrueAndRetryGreaterThan(0).stream()
-                .map(SaleNotificationLog::getTransactionHash)
+        saleNotificationService.getTransactionsToReplay()
                 .forEach(this::process);
     }
 
