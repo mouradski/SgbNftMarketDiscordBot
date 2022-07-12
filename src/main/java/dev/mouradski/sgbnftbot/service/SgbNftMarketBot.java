@@ -7,6 +7,7 @@ import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
+import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
@@ -48,7 +49,6 @@ public class SgbNftMarketBot {
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
-    private ExecutorService senderExecutor = Executors.newFixedThreadPool(4);
 
     public SgbNftMarketBot(@Autowired SubscriptionRepository subscriptionRepository, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
@@ -338,7 +338,6 @@ public class SgbNftMarketBot {
             TextChannel channel = discordApi.getTextChannelById(subscription.getChannelId()).orElse(null);
 
             if (channel != null) {
-                senderExecutor.execute(() -> {
                     List<SaleNotificationLog> saleNotificationLogs = saleNotificationLogRepository
                             .findByTransactionHashAndChannelIdAndFailedIsTrue(saleNotification.getTransactionHash(), channel.getIdAsString());
 
@@ -355,7 +354,7 @@ public class SgbNftMarketBot {
                     }
 
                     try {
-                        channel.sendMessage(embed).get();
+                        channel.sendMessage(embed).join();
                         if (saleNotificationLog == null) {
                             persistNewSaleNotificationLog(saleNotification, subscription, channel, false);
                         }
@@ -364,7 +363,6 @@ public class SgbNftMarketBot {
                         log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.getIdAsString());
                         persistNewSaleNotificationLog(saleNotification, subscription, channel, true);
                     }
-                });
             }
         });
     }
