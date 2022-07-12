@@ -11,8 +11,8 @@
 	<groupId>dev.mouradski</groupId>
 	<artifactId>sparklesmarket</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>sparklesmarket</name>
-	<description>Demo project for Spring Boot</description>
+	<name>bot</name>
+	<description>Sgb NFT Sales Bot</description>
 	<properties>
 
 	</properties>
@@ -108,6 +108,9 @@
 	</repositories>
 
 	<build>
+
+		<finalName>bot</finalName>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
