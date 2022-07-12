@@ -138,38 +138,35 @@ public class SgbNftMarketBot {
     }
 
     public Optional<SaleNotification> process(String transactionHash) {
-        SaleNotification saleNotification = null;
-
         try {
-            saleNotification = process(ethHelper.getTransaction(transactionHash));
+            return process(ethHelper.getTransaction(transactionHash));
         } catch (IOException e) {
             log.error("Error retreiving transaction {}", transactionHash, e);
-        }
-
-        if (saleNotification == null) {
             return Optional.empty();
-        } else {
-            return Optional.of(saleNotification);
         }
-
     }
 
-    public SaleNotification process(Transaction transaction) {
+    public Optional<SaleNotification> process(Transaction transaction) {
         try {
-            TransactionPattern transactionPattern = transactionPatterns.stream()
+            Optional<TransactionPattern> matchingTransactionPattern = transactionPatterns.stream()
                     .filter(pattern -> pattern.matches(transaction))
-                    .findFirst().orElse(null);
+                    .findFirst();
 
-            SaleNotification saleNotification = transactionPattern.buildNotification(transaction);
+            if (matchingTransactionPattern.isPresent()) {
+                SaleNotification saleNotification = matchingTransactionPattern.get().buildNotification(transaction);
 
-            Set<Subscription> subscriptions = subscriptionService.getByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
+                Set<Subscription> subscriptions = subscriptionService.getByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
 
-            saleNotification.setSubscriptions(subscriptions);
+                saleNotification.setSubscriptions(subscriptions);
 
-            notifySale(saleNotification);
-            return saleNotification;
+                notifySale(saleNotification);
+                return Optional.of(saleNotification);
+            } else {
+                return Optional.empty();
+            }
+
         } catch (Exception e) {
-            return null;
+            return Optional.empty();
         }
     }
 
