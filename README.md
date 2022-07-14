@@ -10,6 +10,14 @@ Edit src/main/application.properties then
 mvn spring-boot:run
 ```
 
+
+## Run with Docker
+Edit .env file (Keep database default values if you want to use an embedded database)
+
+```sh
+docker-compose up
+```
+
 ## Test
 ```sh
 mvn test
