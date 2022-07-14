@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, SubscriptionId> {
     List<Subscription> findByContract(String contract);
+    List<Subscription> findByChannelId(String channelId);
 }

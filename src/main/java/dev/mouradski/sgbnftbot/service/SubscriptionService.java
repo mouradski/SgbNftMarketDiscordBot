@@ -13,10 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionService {
-
 
     private SubscriptionRepository subscriptionRepository;
 
@@ -125,5 +126,13 @@ public class SubscriptionService {
         }
 
         return false;
+    }
+
+
+    @Transactional(readOnly = true)
+    Set<String> getContractsByChannelId(String channelId) {
+        return subscriptionRepository.findByChannelId(channelId).stream()
+                .map(Subscription::getContract)
+                .collect(Collectors.toSet());
     }
 }

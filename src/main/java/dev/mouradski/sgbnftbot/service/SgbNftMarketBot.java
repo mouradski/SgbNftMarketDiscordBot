@@ -3,6 +3,7 @@ package dev.mouradski.sgbnftbot.service;
 import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.Subscription;
+import dev.mouradski.sgbnftbot.model.TransactionType;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
@@ -12,7 +13,6 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
 
@@ -35,8 +35,6 @@ public class SgbNftMarketBot {
 
     private SubscriptionService subscriptionService;
 
-    private SaleNotificationService saleNotificationService;
-
     private IpfsHelper ipfsService;
 
     private EthHelper ethHelper;
@@ -50,12 +48,11 @@ public class SgbNftMarketBot {
 
     public SgbNftMarketBot(@Autowired SubscriptionService subscriptionService, @Autowired IpfsHelper ipfsService,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
-                           @Autowired SaleNotificationService saleNotificationService, @Autowired(required = false) DiscordApi discordApi) {
+                           @Autowired(required = false) DiscordApi discordApi) {
         this.subscriptionService = subscriptionService;
         this.ipfsService = ipfsService;
         this.ethHelper = ethHelper;
         this.transactionPatterns = transactionPatterns;
-        this.saleNotificationService = saleNotificationService;
         this.discordApi = discordApi;
     }
 
@@ -76,6 +73,8 @@ public class SgbNftMarketBot {
                     processUnsubscribeCommand(event);
                 } else if (event.getMessageContent().contains("!nftsales help")) {
                     processHelpCommand(event);
+                } else if (event.getMessageContent().contains("!nftsales list")) {
+                    processLisCommand(event);
                 }
             });
 
@@ -103,6 +102,15 @@ public class SgbNftMarketBot {
                     }
                 });
             }
+        }
+    }
+
+    private void processLisCommand(MessageCreateEvent event) {
+        if (event.getMessageAuthor().isServerAdmin()) {
+            String message = subscriptionService.getContractsByChannelId(event.getChannel().getIdAsString()).stream()
+                    .collect(Collectors.joining("\n"));
+
+            event.getChannel().sendMessage(message);
         }
     }
 
@@ -223,6 +231,18 @@ public class SgbNftMarketBot {
             return;
         }
 
+        String transactionTypeValue = null;
+
+        switch (saleNotification.getTransactionType()) {
+            case OFFER_ACCEPTED:
+                transactionTypeValue = "Offer Accepted";
+                break;
+            case BUY:
+            default:
+                transactionTypeValue = "Buy";
+        }
+
+
         String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
         String metaIpfsUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId()).replace("https://ipfs.io/ipfs/", "ipfs://");
@@ -231,25 +251,35 @@ public class SgbNftMarketBot {
 
         byte[] imageContent = ipfsService.get(meta.getImage());
 
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
+                .addField(TransactionType.OFFER_ACCEPTED.equals(saleNotification.getTransactionType()) ? "Seller" : "Buyer", saleNotification.getTrigger())
+                .addInlineField("Token ID", saleNotification.getTokenId().toString())
+                .addInlineField("Price", saleNotification.getPrice() + " SGB")
+                .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
+                .addInlineField("TransactionType", transactionTypeValue)
+                .setUrl(saleNotification.getMarketplaceListingUrl())
+                .setColor(Color.BLUE);
+
+        if (saleNotification.getImageContent() != null) {
+            embed.setImage(saleNotification.getImageContent());
+        } else {
+            embed.setImage(saleNotification.getImageUrl().replace("ipfs://", "https://ipfs.io/ipfs/"));
+        }
+
+
         saleNotification.setImageContent(imageContent);
         saleNotification.setImageUrl(meta.getImage());
 
         saleNotification.getSubscriptions().forEach(subscription -> {
-            TextChannel channel = discordApi.getTextChannelById(subscription.getChannelId()).orElse(null);
-            saleNotificationService.sendSaleNotificationLog(channel, subscription, saleNotification, tokenName);
+            Optional<TextChannel> channel = discordApi.getTextChannelById(subscription.getChannelId());
+            try {
+                if (channel.isPresent()) {
+                    channel.get().sendMessage(embed).join();
+                }
+            } catch (Exception e) {
+                log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.get().getIdAsString());
+            }
         });
     }
-
-
-    @Scheduled(fixedDelay = 43200000)
-    public void purgeLogs() {
-        saleNotificationService.purgeLogs();
-    }
-
-    @Scheduled(fixedDelay = 60000)
-    public void replyFailedNotifications() {
-        saleNotificationService.getTransactionsToReplay()
-                .forEach(this::process);
-    }
-
 }
