@@ -182,13 +182,14 @@ public class SgbNftMarketBot {
         subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server);
     }
 
-    public void subscribeContract(TextChannel channel, String contract, Server server) throws IOException {
+    private void subscribeContract(TextChannel channel, String contract, Server server) throws IOException {
 
         if (subscriptionService.subscribeContract(contract, channel, server)) {
             return;
         }
 
-        Meta meta = retreiveMetaFromCollection(contract);
+        Meta meta = ipfsService.retreiveMetaFromCollection(contract);
+
         String nftName = meta.getName();
 
         if (!nftName.isEmpty()) {
@@ -198,23 +199,6 @@ public class SgbNftMarketBot {
         subscriptionService.subscribeContract(contract, nftName, channel, server);
 
         contracts.add(contract);
-    }
-
-
-    private Meta retreiveMetaFromCollection(String contract) throws IOException {
-
-        int i = 0;
-        String metaIpfsUri = null;
-
-        while (i++ < 100 && metaIpfsUri == null) {
-            metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i));
-        }
-
-        if (metaIpfsUri == null) {
-            return null;
-        }
-
-        return ipfsService.getMeta(metaIpfsUri);
     }
 
     private void unsubscribe(TextChannel channel, String contract) {

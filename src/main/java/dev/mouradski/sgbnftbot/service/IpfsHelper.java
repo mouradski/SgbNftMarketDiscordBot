@@ -25,18 +25,20 @@ import java.util.List;
 @Slf4j
 public class IpfsHelper {
 
-
     private ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private RestTemplate restTemplate;
 
+    private EthHelper ethHelper;
+
     private List<IPFS> ipfsList = new ArrayList<>();
 
     private List<String> ipfsGateways = Arrays.asList("https://ipfs.io/ipfs/", "https://sparkles.mypinata.cloud/ipfs/", "https://ipfs.io/ipfs/");
 
-    public IpfsHelper(@Autowired RestTemplate restTemplate) {
+    public IpfsHelper(@Autowired RestTemplate restTemplate, @Autowired EthHelper ethHelper) {
         this.restTemplate = restTemplate;
+        this.ethHelper = ethHelper;
     }
 
     @PostConstruct
@@ -136,5 +138,22 @@ public class IpfsHelper {
         }
 
         return content;
+    }
+
+
+    public Meta retreiveMetaFromCollection(String contract) throws IOException {
+
+        int i = 0;
+        String metaIpfsUri = null;
+
+        while (i++ < 100 && metaIpfsUri == null) {
+            metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i));
+        }
+
+        if (metaIpfsUri == null) {
+            return null;
+        }
+
+        return getMeta(metaIpfsUri);
     }
 }
