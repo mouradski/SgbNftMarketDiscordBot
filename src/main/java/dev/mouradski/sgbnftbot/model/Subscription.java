@@ -21,7 +21,5 @@ public class Subscription {
     @Id
     private String channelId;
     private String tokenName;
-    private String imageBaseUrl;
-    private String imageExtension;
     private String serverName;
 }

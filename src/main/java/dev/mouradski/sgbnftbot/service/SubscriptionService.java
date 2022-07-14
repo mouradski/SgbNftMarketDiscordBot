@@ -55,7 +55,6 @@ public class SubscriptionService {
 
         Subscription subscription = Subscription.builder()
                 .channelId(channel.getIdAsString()).contract(contract)
-                .imageExtension(null).imageBaseUrl(null)
                 .serverName(server == null ? null : server.getName()).tokenName(nftName).build();
 
 
@@ -105,8 +104,6 @@ public class SubscriptionService {
             Subscription firstSubscription = subscriptionList.get(0);
 
             Subscription newSubscription = Subscription.builder()
-                    .imageBaseUrl(firstSubscription.getImageBaseUrl())
-                    .imageExtension(firstSubscription.getImageExtension())
                     .contract(contract)
                     .serverName(server == null ? null : server.getName())
                     .channelId(channel.getIdAsString())
