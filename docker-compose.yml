@@ -2,6 +2,7 @@ version: "3.3"
 services:
   bot:
     container_name: bot
+    image: bot
     build: .
     env_file: .env
     deploy:
