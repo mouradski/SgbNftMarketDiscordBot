@@ -3,3 +3,6 @@ services:
   bot:
     container_name: bot
     build: .
+    env_file: .env
+
+
