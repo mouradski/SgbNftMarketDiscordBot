@@ -7,14 +7,14 @@ If you like the project or find it useful, feel free to make a donation : 0x1E3C
 ## Run with Docker
 Edit .env file (Keep database default values if you want to use an embedded database)
 
-## Run
+```sh
+docker-compose up
+```
+
+## Run with Maven
 Edit src/main/application.properties then
 ```sh
 mvn spring-boot:run
-```
-
-```sh
-docker-compose up
 ```
 
 ## Test
