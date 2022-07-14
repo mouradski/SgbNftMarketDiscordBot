@@ -53,7 +53,7 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
 
     @Override
     protected Double extracePrice(Transaction transaction) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        BigInteger value = web3.ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().stream()
+        Double value = web3.ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().stream()
                 .filter(log -> log.getTopics().get(0).startsWith("0xddf252ad"))
                 .filter(log -> log.getTopics().size() == 3)
                 .map(log -> log.getData().replace("0x", ""))
@@ -64,8 +64,9 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
                         e.printStackTrace();
                         return new BigInteger("0");
                     }
-                }).sorted(Comparator.reverseOrder())
-                .findFirst().orElse(new BigInteger("0"));
+                })
+                .mapToDouble(BigInteger::doubleValue)
+                .sum();
 
 
         return value.doubleValue() / 1000 ;
