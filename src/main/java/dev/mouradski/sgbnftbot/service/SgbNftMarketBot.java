@@ -261,15 +261,11 @@ public class SgbNftMarketBot {
                 .setUrl(saleNotification.getMarketplaceListingUrl())
                 .setColor(Color.BLUE);
 
-        if (saleNotification.getImageContent() != null) {
-            embed.setImage(saleNotification.getImageContent());
+        if (imageContent != null) {
+            embed.setImage(imageContent);
         } else {
-            embed.setImage(saleNotification.getImageUrl().replace("ipfs://", "https://ipfs.io/ipfs/"));
+            embed.setImage(metaIpfsUri.replace("ipfs://", "https://ipfs.io/ipfs/"));
         }
-
-
-        saleNotification.setImageContent(imageContent);
-        saleNotification.setImageUrl(meta.getImage());
 
         saleNotification.getSubscriptions().forEach(subscription -> {
             Optional<TextChannel> channel = discordApi.getTextChannelById(subscription.getChannelId());
