@@ -4,6 +4,8 @@ Fork this project for any other chain using Ethereum Virtual Machine (EVM) like 
 
 If you like the project or find it useful, feel free to make a donation : 0x1E3CEC41608c438cA7524D6Fb042f905c46EcBae
 
+Bot commands usage : https://nftsalesbot.mouradski.dev/pages/commands.html
+
 ## Run with Docker
 Edit .env file (Keep database default values if you want to use an embedded database)
 
