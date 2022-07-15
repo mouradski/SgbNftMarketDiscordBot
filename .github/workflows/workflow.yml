@@ -71,5 +71,26 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
 
-    - name: Deploy Docker Container
-      uses: ./.github/workflows/deploy
+  deploy:
+    needs: analyze
+    runs-on: self-hosted
+      steps:
+        - name: Install or Update Docker
+          run: |
+            if [ -x "$(command -v docker)" ]; then
+              echo "Update docker"
+              sudo apt update -y
+              sudo apt-get --only-upgrade install docker.io docker-compose -y
+            else
+              echo "Install docker"
+              sudo apt update
+              sudo apt upgrade -y
+              sudo apt-get install docker.io docker-compose -y
+            fi
+        - name: Deploy container
+          run: |
+            cp /var/local/.env ./
+            docker-compose build
+            docker-compose down
+            docker-compose up -d
+
