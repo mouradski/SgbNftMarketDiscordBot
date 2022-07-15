@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
 import java.text.NumberFormat;
+import java.util.Locale;
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
