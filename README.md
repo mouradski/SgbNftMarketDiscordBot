@@ -7,7 +7,7 @@ If you like the project or find it useful, feel free to make a donation : 0x1E3C
 Bot commands usage : https://nftsalesbot.mouradski.dev/pages/commands.html
 
 ## Run with Docker
-Edit .env file (Keep database default values if you want to use an embedded database)
+Edit .env file (Keep database default values if you want to use an embedded database for test purpose)
 
 ```sh
 docker-compose up
