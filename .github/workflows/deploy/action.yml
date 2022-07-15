@@ -18,8 +18,8 @@ jobs:
             sudo apt-get install docker.io docker-compose -y
           fi
       - name: Deploy container
-          run: |
-            cp /var/local/.env ./
-            docker-compose build
-            docker-compose down
-            docker-compose up -d
+        run: |
+          cp /var/local/.env ./
+          docker-compose build
+          docker-compose down
+          docker-compose up -d
