@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
-
+import java.text.NumberFormat;
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
@@ -42,6 +42,8 @@ public class SgbNftMarketBot {
     private DiscordApi discordApi;
 
     private List<TransactionPattern> transactionPatterns;
+    
+    private final NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
@@ -239,7 +241,7 @@ public class SgbNftMarketBot {
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
                 .addField(TransactionType.OFFER_ACCEPTED.equals(saleNotification.getTransactionType()) ? "Seller" : "Buyer", saleNotification.getTrigger())
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
-                .addInlineField("Price", saleNotification.getPrice() + " SGB")
+                .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " SGB")
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
                 .addInlineField("TransactionType", transactionTypeValue)
                 .setUrl(saleNotification.getMarketplaceListingUrl())
