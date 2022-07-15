@@ -5,6 +5,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Install or Update Docker
+      - uses: actions/checkout@v2
         run: |
           if [ -x "$(command -v docker)" ]; then
             echo "Update docker"
