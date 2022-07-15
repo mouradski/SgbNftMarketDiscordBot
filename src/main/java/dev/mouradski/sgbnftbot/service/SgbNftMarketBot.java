@@ -43,7 +43,7 @@ public class SgbNftMarketBot {
 
     private List<TransactionPattern> transactionPatterns;
     
-    private final NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
+    private final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
