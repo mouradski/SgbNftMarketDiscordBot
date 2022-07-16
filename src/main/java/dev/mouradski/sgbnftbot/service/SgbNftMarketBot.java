@@ -119,6 +119,7 @@ public class SgbNftMarketBot {
                 .setTitle("Commandes :")
                 .addField("Subscription command", "!nftsales subscribe CONTRACT_ADDRESS")
                 .addField("Unsubscription command", "!nftsales unsubscribe CONTRACT_ADDRESS")
+                .addField("List Subscriptions command", "!nftsales list")
                 .setColor(Color.BLUE);
 
         event.getChannel().sendMessage(embed);

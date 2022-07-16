@@ -128,10 +128,26 @@ public class SubscriptionService {
 
     @Transactional(readOnly = true)
     public void listAndSendSubscriptions(TextChannel channel) {
-        String messageContent = subscriptionRepository.findByChannelId(channel.getIdAsString()).stream()
-                .map(subscription -> subscription.getTokenName() + " " + subscription.getContract())
-                .collect(Collectors.joining("\n"));
+        List<Subscription> subscriptions = subscriptionRepository.findByChannelId(channel.getIdAsString());
 
-        channel.sendMessage(messageContent);
+        int count = 0;
+
+        StringBuilder sb = new StringBuilder();
+
+        for (Subscription subscription : subscriptions) {
+            sb.append(subscription.getTokenName()).append("  :  ").append(subscription.getContract()).append("\n");
+
+            if (count == 5) {
+                count = 0;
+                channel.sendMessage(sb.toString());
+                sb = new StringBuilder();
+            }
+
+            count++;
+        }
+
+        if (sb.length() > 0) {
+            channel.sendMessage(sb.toString());
+        }
     }
 }
