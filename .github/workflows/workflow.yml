@@ -74,7 +74,7 @@ jobs:
   deploy:
     name: Deploy
     needs: analyze
-    runs-on: self-hosted
+    runs-on: [self-hosted, X64, prod]
 
     steps:
       - name: Checkout repository
