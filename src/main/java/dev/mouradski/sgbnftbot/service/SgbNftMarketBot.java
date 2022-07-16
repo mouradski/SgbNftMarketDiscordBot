@@ -36,7 +36,7 @@ public class SgbNftMarketBot {
 
     private SubscriptionService subscriptionService;
 
-    private IpfsHelper ipfsService;
+    private IpfsHelper ipfsHelper;
 
     private EthHelper ethHelper;
 
@@ -49,11 +49,11 @@ public class SgbNftMarketBot {
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
 
-    public SgbNftMarketBot(@Autowired SubscriptionService subscriptionService, @Autowired IpfsHelper ipfsService,
+    public SgbNftMarketBot(@Autowired SubscriptionService subscriptionService, @Autowired IpfsHelper ipfsHelper,
                            @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
                            @Autowired(required = false) DiscordApi discordApi) {
         this.subscriptionService = subscriptionService;
-        this.ipfsService = ipfsService;
+        this.ipfsHelper = ipfsHelper;
         this.ethHelper = ethHelper;
         this.transactionPatterns = transactionPatterns;
         this.discordApi = discordApi;
@@ -191,7 +191,7 @@ public class SgbNftMarketBot {
             return;
         }
 
-        Meta meta = ipfsService.retreiveMetaFromCollection(contract);
+        Meta meta = ipfsHelper.retreiveMetaFromCollection(contract);
 
         String nftName = meta.getName();
 
@@ -234,9 +234,9 @@ public class SgbNftMarketBot {
 
         String metaIpfsUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId()).replace("https://ipfs.io/ipfs/", "ipfs://");
 
-        Meta meta = ipfsService.getMeta(metaIpfsUri);
+        Meta meta = ipfsHelper.getMeta(metaIpfsUri);
 
-        byte[] imageContent = ipfsService.get(meta.getImage());
+        byte[] imageContent = ipfsHelper.get(meta.getImage());
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
@@ -251,7 +251,7 @@ public class SgbNftMarketBot {
         if (imageContent != null) {
             embed.setImage(imageContent);
         } else {
-            embed.setImage(metaIpfsUri.replace("ipfs://", "https://ipfs.io/ipfs/"));
+            embed.setImage(meta.getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
         }
 
         saleNotification.getSubscriptions().forEach(subscription -> {

@@ -1,21 +1,67 @@
 package dev.mouradski.sgbnftbot.service;
 
+import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
+import dev.mouradski.sgbnftbot.model.Subscription;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.channel.TextChannel;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.core.entity.message.embed.EmbedBuilderDelegateImpl;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 @SpringBootTest
 @TestPropertySource(locations="classpath:test.properties")
 public class SgbNftMarketBotTest {
 
     @Autowired
+    @InjectMocks
     private SgbNftMarketBot sgbNftMarketBotWIP;
+
+    @MockBean
+    private IpfsHelper ipfsHelper;
+
+    @MockBean
+    private DiscordApi discordApi;
+
+    @MockBean
+    private SubscriptionService subscriptionService;
+
+    @Mock
+    private TextChannel textChannelMock;
+
+
+    @Captor
+    ArgumentCaptor<EmbedBuilder> embedMessageCapture;
+
+
+    @BeforeEach
+    public void initTest() throws IOException {
+        Mockito.reset(ipfsHelper, discordApi, subscriptionService, textChannelMock);
+        Mockito.when(discordApi.getTextChannelById(eq("12345"))).thenReturn(Optional.of(textChannelMock));
+
+        Subscription subscription = Subscription.builder().channelId("12345").tokenName("TOKEN_NAME").build();
+        Mockito.when(subscriptionService.getByContract(anyString())).thenReturn(Arrays.asList(subscription));
+
+        Mockito.when(ipfsHelper.getMeta(anyString())).thenReturn(Meta.builder().image("IMAGE_URL").build());
+        Mockito.when(ipfsHelper.get(eq("IMAGE_URL"))).thenReturn(null);
+    }
 
     @ParameterizedTest
     @CsvSource({
@@ -44,8 +90,36 @@ public class SgbNftMarketBotTest {
             Assertions.assertEquals(price, saleNotification.get().getPrice());
             Assertions.assertEquals(marketplace, saleNotification.get().getMarketplace().toString());
             Assertions.assertEquals(transactionType, saleNotification.get().getTransactionType().name());
+
+            Mockito.verify(textChannelMock).sendMessage(embedMessageCapture.capture());
+
+            EmbedBuilder embedMsg = embedMessageCapture.getValue();
+
+
+            String jsonMsg = ((EmbedBuilderDelegateImpl)embedMsg.getDelegate()).toJsonNode().toString();
+
+            String expectedJsonMsgTemplate = "BUY".equalsIgnoreCase(transactionType) ?
+                    jsonBuyerMsgTemplate : jsonSellerMsgTemplate;
+
+
+
+            String expectedJsonMsg =
+                    expectedJsonMsgTemplate.replace("_TRIGGER_", trigger)
+                            .replace("_PRICE_", NumberFormat.getNumberInstance(Locale.US).format(price) + " SGB")
+                            .replace("_TITLE_", "TOKEN_NAME #" + tokenId + " has been sold !")
+                            .replace("_LISTING_URL_", marketplace.equalsIgnoreCase("NFTSO") ?  ("https://nftso.xyz/item-details/19/" + contract + "/" + tokenId) :
+                                            ("https://www.sparklesnft.com/item/" + contract + "_" + tokenId))
+                            .replace("_MARKETPLACE_", marketplace)
+                            .replace("_TOKEN_ID_", tokenId.toString())
+                            .replace("_TRANSACTION_TYPE_", "BUY".equalsIgnoreCase(transactionType) ? "Buy" : "Offer Accepted");
+
+            Assertions.assertEquals(expectedJsonMsg, jsonMsg);
         }
     }
+
+
+    private String jsonSellerMsgTemplate = "{\"type\":\"rich\",\"title\":\"_TITLE_\",\"url\":\"_LISTING_URL_\",\"color\":255,\"image\":{\"url\":\"IMAGE_URL\"},\"fields\":[{\"name\":\"Seller\",\"value\":\"_TRIGGER_\",\"inline\":false},{\"name\":\"Token ID\",\"value\":\"_TOKEN_ID_\",\"inline\":true},{\"name\":\"Price\",\"value\":\"_PRICE_\",\"inline\":true},{\"name\":\"Marketplace\",\"value\":\"_MARKETPLACE_\",\"inline\":true},{\"name\":\"TransactionType\",\"value\":\"_TRANSACTION_TYPE_\",\"inline\":true}]}";
+    private String jsonBuyerMsgTemplate = "{\"type\":\"rich\",\"title\":\"_TITLE_\",\"url\":\"_LISTING_URL_\",\"color\":255,\"image\":{\"url\":\"IMAGE_URL\"},\"fields\":[{\"name\":\"Buyer\",\"value\":\"_TRIGGER_\",\"inline\":false},{\"name\":\"Token ID\",\"value\":\"_TOKEN_ID_\",\"inline\":true},{\"name\":\"Price\",\"value\":\"_PRICE_\",\"inline\":true},{\"name\":\"Marketplace\",\"value\":\"_MARKETPLACE_\",\"inline\":true},{\"name\":\"TransactionType\",\"value\":\"_TRANSACTION_TYPE_\",\"inline\":true}]}";
 
 
 }
