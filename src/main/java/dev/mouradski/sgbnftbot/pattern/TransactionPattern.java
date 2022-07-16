@@ -31,9 +31,7 @@ public abstract class TransactionPattern {
 
     protected abstract String extractNftContract(Transaction transaction) throws IOException;
 
-    protected abstract String extractBuyer(Transaction transaction);
-
-    protected abstract String extractSeller(Transaction transaction);
+    protected abstract String extractBuyer(Transaction transaction) throws IOException;
 
     protected abstract Long extractTokenId(Transaction transaction) throws IOException;
 
@@ -46,21 +44,18 @@ public abstract class TransactionPattern {
             InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         String buyer = extractBuyer(transaction);
-        String seller = extractSeller(transaction);
         Long tokenId = extractTokenId(transaction);
         Double price = extracePrice(transaction);
         TransactionType transactionType = getTransactionType();
         String nftContract = extractNftContract(transaction).toLowerCase();
         String marketplaceListingUrl = getMarketplaceListingUrl(transaction);
 
-        String trigger = buyer != null ? buyer : seller;
-
-        return SaleNotification.builder().contract(nftContract).buyer(buyer).seller(seller)
+        return SaleNotification.builder().contract(nftContract)
+                .buyer(buyer)
                 .transactionType(transactionType)
                 .marketplace(getMarketplace())
                 .price(price.doubleValue()).tokenId(tokenId)
                 .marketplaceListingUrl(marketplaceListingUrl)
-                .trigger(trigger)
                 .transactionHash(transaction.getHash())
                 .build();
     }

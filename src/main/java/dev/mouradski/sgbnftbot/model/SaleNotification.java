@@ -14,13 +14,11 @@ import java.util.Set;
 public class SaleNotification {
     private Set<Subscription> subscriptions;
     private String contract;
-    private String trigger;
     private Double price;
     private Long tokenId;
     private String marketplaceListingUrl;
     private Marketplace marketplace;
     private TransactionType transactionType;
     private String buyer;
-    private String seller;
     private String transactionHash;
 }

@@ -9,7 +9,6 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.Comparator;
 
 @Component
 public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
@@ -36,13 +35,12 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
     }
 
     @Override
-    protected String extractBuyer(Transaction transaction) {
-        return null;
-    }
-
-    @Override
-    protected String extractSeller(Transaction transaction) {
-        return transaction.getFrom();
+    protected String extractBuyer(Transaction transaction) throws IOException {
+        return web3.ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().stream()
+                .filter(log -> log.getTopics().get(0).startsWith("0xddf252ad"))
+                .filter(log -> log.getTopics().size() == 3)
+                .map(log -> log.getTopics().get(1).replace("0x000000000000000000000000", "0x"))
+                .findFirst().get();
     }
 
     @Override

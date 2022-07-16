@@ -3,7 +3,6 @@ package dev.mouradski.sgbnftbot.service;
 import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.Subscription;
-import dev.mouradski.sgbnftbot.model.TransactionType;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
 import lombok.extern.slf4j.Slf4j;
 import org.javacord.api.DiscordApi;
@@ -27,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
 
 @Component
 @EnableScheduling
@@ -238,7 +236,7 @@ public class SgbNftMarketBot {
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
-                .addField(TransactionType.OFFER_ACCEPTED.equals(saleNotification.getTransactionType()) ? "Seller" : "Buyer", saleNotification.getTrigger())
+                .addField("Buyer", saleNotification.getBuyer())
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
                 .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " SGB")
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
