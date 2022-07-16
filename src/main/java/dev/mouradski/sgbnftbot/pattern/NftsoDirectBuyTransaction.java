@@ -43,11 +43,6 @@ public class NftsoDirectBuyTransaction extends TransactionPattern {
     }
 
     @Override
-    protected String extractSeller(Transaction transaction) {
-        return null;
-    }
-
-    @Override
     protected Long extractTokenId(Transaction transaction) throws IOException {
         Log log = ethHelper.getLog(transaction.getHash());
         return Long.parseLong(log.getTopics().get(3).replace("0x", ""), 16);

@@ -39,14 +39,10 @@ public class SparklesDirectBuyPattern extends TransactionPattern {
     }
 
     @Override
-    protected String extractBuyer(Transaction transaction) {
+    protected String extractBuyer(Transaction transaction) throws IOException {
         return transaction.getFrom();
     }
 
-    @Override
-    protected String extractSeller(Transaction transaction) {
-        return null;
-    }
 
     @Override
     protected Long extractTokenId(Transaction transaction) throws IOException {
