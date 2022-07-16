@@ -110,10 +110,7 @@ public class SgbNftMarketBot {
 
     private void processLisCommand(MessageCreateEvent event) {
         if (event.getMessageAuthor().isServerAdmin()) {
-            String message = subscriptionService.getContractsByChannelId(event.getChannel().getIdAsString()).stream()
-                    .collect(Collectors.joining("\n"));
-
-            event.getChannel().sendMessage(message);
+            subscriptionService.listAndSendSubscriptions(event.getChannel());
         }
     }
 
@@ -122,6 +119,7 @@ public class SgbNftMarketBot {
                 .setTitle("Commandes :")
                 .addField("Subscription command", "!nftsales subscribe CONTRACT_ADDRESS")
                 .addField("Unsubscription command", "!nftsales unsubscribe CONTRACT_ADDRESS")
+                .addField("List Subscriptions command", "!nftsales list")
                 .setColor(Color.BLUE);
 
         event.getChannel().sendMessage(embed);
