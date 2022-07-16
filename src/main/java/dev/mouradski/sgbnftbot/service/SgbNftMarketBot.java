@@ -110,10 +110,7 @@ public class SgbNftMarketBot {
 
     private void processLisCommand(MessageCreateEvent event) {
         if (event.getMessageAuthor().isServerAdmin()) {
-            String message = subscriptionService.getContractsByChannelId(event.getChannel().getIdAsString()).stream()
-                    .collect(Collectors.joining("\n"));
-
-            event.getChannel().sendMessage(message);
+            subscriptionService.listAndSendSubscriptions(event.getChannel());
         }
     }
 

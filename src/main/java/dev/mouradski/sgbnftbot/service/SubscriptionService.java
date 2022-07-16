@@ -79,6 +79,7 @@ public class SubscriptionService {
         subscriptionRepository.deleteById(SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build());
     }
 
+
     @Transactional
     public boolean subscribeContract(String contract, TextChannel channel, Server server) {
         SubscriptionId subscriptionId = SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build();
@@ -125,11 +126,12 @@ public class SubscriptionService {
         return false;
     }
 
-
     @Transactional(readOnly = true)
-    Set<String> getContractsByChannelId(String channelId) {
-        return subscriptionRepository.findByChannelId(channelId).stream()
-                .map(Subscription::getContract)
-                .collect(Collectors.toSet());
+    public void listAndSendSubscriptions(TextChannel channel) {
+        String messageContent = subscriptionRepository.findByChannelId(channel.getIdAsString()).stream()
+                .map(subscription -> subscription.getTokenName() + " " + subscription.getContract())
+                .collect(Collectors.joining("\n"));
+
+        channel.sendMessage(messageContent);
     }
 }
