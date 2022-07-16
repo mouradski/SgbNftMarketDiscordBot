@@ -1,0 +1,22 @@
+name: "Deploy Test Env"
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: [self-hosted, X64, test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy container
+        run: |
+         echo "Deploy container"
+         cp /var/local/.env ./
+         sudo docker-compose build
+         sudo docker-compose down
+         sudo docker-compose up -d

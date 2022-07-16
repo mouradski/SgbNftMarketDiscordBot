@@ -9,7 +9,7 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: "CodeQL"
+name: "CodeQL && Deploy Prod"
 
 on:
   push:
@@ -74,7 +74,7 @@ jobs:
   deploy:
     name: Deploy
     needs: analyze
-    runs-on: self-hosted
+    runs-on: [self-hosted, X64, prod]
 
     steps:
       - name: Checkout repository
