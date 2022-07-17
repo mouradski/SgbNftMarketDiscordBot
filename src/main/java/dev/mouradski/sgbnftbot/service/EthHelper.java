@@ -1,6 +1,7 @@
 package dev.mouradski.sgbnftbot.service;
 
 import io.reactivex.Flowable;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.FunctionEncoder;
@@ -19,8 +20,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
+@Slf4j
 public class EthHelper {
 
     private Web3j web3;
@@ -47,7 +50,7 @@ public class EthHelper {
     }
 
 
-    public String getTokenUri(String contract, Long tokenId) {
+    public Optional<String> getTokenUri(String contract, Long tokenId) {
         try {
             org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                     "tokenURI",
@@ -64,9 +67,10 @@ public class EthHelper {
             List<Type> someTypes = FunctionReturnDecoder.decode(
                     response.getValue(), function.getOutputParameters());
 
-            return someTypes.get(0).toString();
+            return Optional.of(someTypes.get(0).toString());
         } catch (Exception e) {
-            return null;
+            log.error("Error retrieving token URI, contract : {}, id : {}", contract, tokenId);
+            return Optional.empty();
         }
     }
 }

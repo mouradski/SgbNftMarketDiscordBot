@@ -8,10 +8,7 @@ import io.ipfs.multiaddr.MultiAddress;
 import io.ipfs.multihash.Multihash;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -20,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -51,7 +49,7 @@ public class IpfsHelper {
 
     }
 
-    public byte[] get(String uri) {
+    public Optional<byte[]> get(String uri) {
         for (IPFS ipfs : ipfsList) {
             try {
                 return get(uri, ipfs);
@@ -59,34 +57,40 @@ public class IpfsHelper {
                 log.error("error retrieving IPFS resource", uri, e.getMessage());
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    public Meta getMeta(String uri) throws IOException {
-        byte[] content = get(uri);
+    public Optional<Meta> getMeta(String uri) throws IOException {
+        Optional<byte[]> content = get(uri);
 
-        if (content != null) {
-            return objectMapper.readValue(content, Meta.class);
+        if (content.isPresent()) {
+            return Optional.of(objectMapper.readValue(content.get(), Meta.class));
         }
 
         if (uri.contains("/ipfs/")) {
             content = get(uri.split("/ipfs/")[1]);
         }
 
-        if (content != null) {
-            return objectMapper.readValue(content, Meta.class);
+        if (content.isPresent()) {
+            return Optional.of(objectMapper.readValue(content.get(), Meta.class));
         }
 
         return getMetaFromGateway(uri);
     }
 
-    public Meta getMetaNoIpfsUrl(String url) {
+    public Optional<Meta> getMetaNoIpfsUrl(String url) {
         ResponseEntity<dev.mouradski.sgbnftbot.model.Meta> responseEntity =
                 restTemplate.exchange(url, HttpMethod.GET, buildEmptyEntity(), dev.mouradski.sgbnftbot.model.Meta.class);
-        return responseEntity.getBody();
+
+        if (HttpStatus.OK == responseEntity.getStatusCode()) {
+            return Optional.of(responseEntity.getBody());
+        } else {
+            log.error("Error retrieving Metadata from {}, httpStatus : {}", url, responseEntity.getStatusCode());
+            return Optional.empty();
+        }
     }
 
-    public Meta getMetaFromGateway(String url, String httpGateway) {
+    public Optional<Meta> getMetaFromGateway(String url, String httpGateway) {
         String jsonUrl = null;
 
         if (url.startsWith("http")) {
@@ -97,11 +101,16 @@ public class IpfsHelper {
 
         ResponseEntity<dev.mouradski.sgbnftbot.model.Meta> responseEntity = restTemplate.exchange(jsonUrl, HttpMethod.GET, buildEmptyEntity(), dev.mouradski.sgbnftbot.model.Meta.class);
 
-        return responseEntity.getBody();
+        if (HttpStatus.OK == responseEntity.getStatusCode()) {
+            return Optional.of(responseEntity.getBody());
+        } else {
+            log.error("Error retrieving Metadata from {}, httpStatus : {}", jsonUrl, responseEntity.getStatusCode());
+            return Optional.empty();
+        }
+
     }
 
-    public Meta getMetaFromGateway(String url) {
-
+    public Optional<Meta> getMetaFromGateway(String url) {
         for (String gateway: ipfsGateways) {
             try {
                 return getMetaFromGateway(url, gateway);
@@ -110,7 +119,7 @@ public class IpfsHelper {
             }
         }
 
-       return null;
+       return Optional.empty();
     }
 
     private HttpEntity buildEmptyEntity() {
@@ -120,7 +129,7 @@ public class IpfsHelper {
         return entity;
     }
 
-    public byte[] get(String uri, IPFS ipfsProvider) throws IOException {
+    public Optional<byte[]> get(String uri, IPFS ipfsProvider) throws IOException {
         String[] ipfsArgs = uri.contains("/ipfs/") ?
                 uri.split("/ipfs/")[1].split("/") :
                 uri.replace("ipfs://", "").split("/");
@@ -137,23 +146,21 @@ public class IpfsHelper {
             content = ipfsProvider.cat(filePointer, "/" + ipfsArgs[1] + "/" + ipfsArgs[2]);
         }
 
-        return content;
+        return content == null ? Optional.empty() : Optional.of(content);
     }
 
 
-    public Meta retreiveMetaFromCollection(String contract) throws IOException {
+    public Optional<Meta> retreiveMetaFromCollection(String contract) throws IOException {
 
         int i = 0;
-        String metaIpfsUri = null;
+
+        Optional<String> metaIpfsUri = null;
 
         while (i++ < 100 && metaIpfsUri == null) {
             metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i));
         }
 
-        if (metaIpfsUri == null) {
-            return null;
-        }
 
-        return getMeta(metaIpfsUri);
+        return metaIpfsUri.isPresent() ? getMeta(metaIpfsUri.get()) : Optional.empty();
     }
 }

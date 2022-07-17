@@ -1,5 +1,6 @@
 package dev.mouradski.sgbnftbot.service;
 
+import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.Subscription;
 import dev.mouradski.sgbnftbot.model.SubscriptionId;
 import dev.mouradski.sgbnftbot.repository.SubscriptionRepository;
@@ -46,7 +47,14 @@ public class SubscriptionService {
 
 
     @Transactional
-    public void subscribeContract(String contract, String nftName, TextChannel channel, Server server) {
+    public void subscribeContract(String contract, Optional<Meta> meta, TextChannel channel, Server server) {
+
+        if (!meta.isPresent()) {
+            channel.sendMessage(new EmbedBuilder().setTitle("Error retrieving contract metadata, retry later !").setColor(Color.RED));
+        }
+
+        String nftName = meta.get().getName().replaceAll("#[0-9]+", "").replace("-", "").trim();
+
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("Subscription successfully !")
                 .addField("Project Name", nftName)

@@ -14,15 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Transaction;
-import java.text.NumberFormat;
-import java.util.Locale;
+
 import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.io.IOException;
-import java.util.HashSet;
+import java.text.NumberFormat;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -187,15 +185,10 @@ public class SgbNftMarketBot {
             return;
         }
 
-        Meta meta = ipfsHelper.retreiveMetaFromCollection(contract);
+        Optional<Meta> meta = ipfsHelper.retreiveMetaFromCollection(contract);
 
-        String nftName = meta.getName();
 
-        if (!nftName.isEmpty()) {
-            nftName = meta.getName().replaceAll("#[0-9]+", "").replace("-", "").trim();
-        }
-
-        subscriptionService.subscribeContract(contract, nftName, channel, server);
+        subscriptionService.subscribeContract(contract, meta, channel, server);
 
         contracts.add(contract);
     }
@@ -228,11 +221,22 @@ public class SgbNftMarketBot {
 
         String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
-        String metaIpfsUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId()).replace("https://ipfs.io/ipfs/", "ipfs://");
+        Optional<String> metaUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId());
+        String metaIpfsUri = null;
 
-        Meta meta = ipfsHelper.getMeta(metaIpfsUri);
+        if (metaUri.isPresent()) {
+            metaIpfsUri = metaUri.get().replace("https://ipfs.io/ipfs/", "ipfs://");
+        } else {
+            return;
+        }
 
-        byte[] imageContent = ipfsHelper.get(meta.getImage());
+        Optional<Meta> meta = ipfsHelper.getMeta(metaIpfsUri);
+
+        if (!meta.isPresent()) {
+            return;
+        }
+
+        Optional<byte[]> imageContent = ipfsHelper.get(meta.get().getImage());
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
@@ -244,10 +248,10 @@ public class SgbNftMarketBot {
                 .setUrl(saleNotification.getMarketplaceListingUrl())
                 .setColor(Color.BLUE);
 
-        if (imageContent != null) {
-            embed.setImage(imageContent);
+        if (imageContent.isPresent()) {
+            embed.setImage(imageContent.get());
         } else {
-            embed.setImage(meta.getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
+            embed.setImage(meta.get().getImage().replace("ipfs://", "https://ipfs.io/ipfs/"));
         }
 
         saleNotification.getSubscriptions().forEach(subscription -> {

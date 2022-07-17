@@ -22,9 +22,9 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 
 @SpringBootTest
 @TestPropertySource(locations="classpath:test.properties")
@@ -46,10 +46,12 @@ public class SgbNftMarketBotTest {
     @Mock
     private TextChannel textChannelMock;
 
+    @Mock
+    private CompletableFuture completableFuture;
+
 
     @Captor
     ArgumentCaptor<EmbedBuilder> embedMessageCapture;
-
 
     @BeforeEach
     public void initTest() throws IOException {
@@ -59,8 +61,13 @@ public class SgbNftMarketBotTest {
         Subscription subscription = Subscription.builder().channelId("12345").tokenName("TOKEN_NAME").build();
         Mockito.when(subscriptionService.getByContract(anyString())).thenReturn(Arrays.asList(subscription));
 
-        Mockito.when(ipfsHelper.getMeta(anyString())).thenReturn(Meta.builder().image("IMAGE_URL").build());
-        Mockito.when(ipfsHelper.get(eq("IMAGE_URL"))).thenReturn(null);
+        Mockito.when(ipfsHelper.getMeta(anyString())).thenReturn(Optional.of(Meta.builder().image("IMAGE_URL").build()));
+        Mockito.when(ipfsHelper.get(eq("IMAGE_URL"))).thenReturn(Optional.empty());
+
+
+        Mockito.when(completableFuture.join()).thenReturn(null);
+        Mockito.when(textChannelMock.sendMessage(any(EmbedBuilder.class))).thenReturn(completableFuture);
+
     }
 
     @ParameterizedTest
