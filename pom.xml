@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>dev.mouradski</groupId>
-	<artifactId>sparklesmarket</artifactId>
+	<artifactId>sgb-nft-market-bot</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>bot</name>
 	<description>Sgb NFT Sales Bot</description>
