@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>dev.mouradski</groupId>
-	<artifactId>sparklesmarket</artifactId>
+	<artifactId>sgb-nft-market-bot</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>bot</name>
 	<description>Sgb NFT Sales Bot</description>
@@ -42,13 +42,6 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-params</artifactId>
 			<version>5.8.1</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.13.0</version>
 			<scope>test</scope>
 		</dependency>
 
