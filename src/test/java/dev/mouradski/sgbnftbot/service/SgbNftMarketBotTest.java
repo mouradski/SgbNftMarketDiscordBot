@@ -1,5 +1,6 @@
 package dev.mouradski.sgbnftbot.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.Subscription;
@@ -18,6 +19,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Locale;
@@ -49,9 +53,10 @@ public class SgbNftMarketBotTest {
     @Mock
     private CompletableFuture completableFuture;
 
-
     @Captor
     ArgumentCaptor<EmbedBuilder> embedMessageCapture;
+
+    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @BeforeEach
     public void initTest() throws IOException {
@@ -84,7 +89,7 @@ public class SgbNftMarketBotTest {
             "0x5c8166e6873a2612b5c042aaa0b94834b1752183795bf36ee75b5de95d81c146,0xcdb019c0990c033724da55f5a04be6fd6ec1809d,0x7b85de63bfaf89e8b6bffe6f38697a1115cef8e3,21972,1200,SparklesNFT,BUY",
             "0xce5781c10cf196a6b59683b9976b4509e677210c4d5506a7df53c5713b0c24d9,,,,,,",
             "0x97321d554675b4c0e85ce99a9abeb77c4148d6522657033572ab327631a5d514,,,,,,"})
-    public void testProcess(String transactionHash, String contract, String buyer, Long tokenId, Double price, String marketplace, String transactionType) {
+    public void testProcess(String transactionHash, String contract, String buyer, Long tokenId, Double price, String marketplace, String transactionType) throws URISyntaxException, IOException {
         Optional<SaleNotification> saleNotification = sgbNftMarketBotWIP.process(transactionHash);
 
         if (contract == null) {
@@ -104,6 +109,7 @@ public class SgbNftMarketBotTest {
 
             String jsonMsg = ((EmbedBuilderDelegateImpl)embedMsg.getDelegate()).toJsonNode().toString();
 
+            String jsonMsgTemplate = new String(Files.readAllBytes(Paths.get(getClass().getResource("/jsonMsgTemplate.json").toURI())));
 
             String expectedJsonMsg =
                     jsonMsgTemplate.replace("_BUYER_", buyer)
@@ -115,12 +121,8 @@ public class SgbNftMarketBotTest {
                             .replace("_TOKEN_ID_", tokenId.toString())
                             .replace("_TRANSACTION_TYPE_", "BUY".equalsIgnoreCase(transactionType) ? "Buy" : "Offer Accepted");
 
-            Assertions.assertEquals(expectedJsonMsg, jsonMsg);
+            Assertions.assertEquals(OBJECT_MAPPER.readTree(expectedJsonMsg), OBJECT_MAPPER.readTree(jsonMsg));
         }
     }
-
-
-    private String jsonMsgTemplate = "{\"type\":\"rich\",\"title\":\"_TITLE_\",\"url\":\"_LISTING_URL_\",\"color\":255,\"image\":{\"url\":\"IMAGE_URL\"},\"fields\":[{\"name\":\"Buyer\",\"value\":\"_BUYER_\",\"inline\":false},{\"name\":\"Token ID\",\"value\":\"_TOKEN_ID_\",\"inline\":true},{\"name\":\"Price\",\"value\":\"_PRICE_\",\"inline\":true},{\"name\":\"Marketplace\",\"value\":\"_MARKETPLACE_\",\"inline\":true},{\"name\":\"TransactionType\",\"value\":\"_TRANSACTION_TYPE_\",\"inline\":true}]}";
-
 
 }
