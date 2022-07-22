@@ -8,8 +8,6 @@ import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.List;
 
 @Component
 public class SparklesDirectBuyPattern extends TransactionPattern {
@@ -20,13 +18,13 @@ public class SparklesDirectBuyPattern extends TransactionPattern {
     }
 
     @Override
-    protected List<String> getPatternContract() {
-        return Arrays.asList("0xb5318d47129a09a6c8f2a0ddcd8f2934e6b73141", "0xc1c02a72de998a4659b8d430e741446d1f5e268f");
+    protected String getPatternContract() {
+        return "0xc1c02a72de998a4659b8d430e741446d1f5e268f";
     }
 
     @Override
-    protected List<String> getTransactionFunction() {
-        return Arrays.asList("0x18418ee7");
+    protected String getTransactionFunction() {
+        return "0x18418ee7";
     }
 
     @Override
