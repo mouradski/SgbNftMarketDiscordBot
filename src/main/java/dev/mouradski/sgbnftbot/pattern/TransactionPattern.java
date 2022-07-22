@@ -11,6 +11,8 @@ import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class TransactionPattern {
@@ -23,9 +25,9 @@ public abstract class TransactionPattern {
 
     protected abstract TransactionType getTransactionType();
 
-    protected abstract String getPatternContract();
+    protected abstract List<String> getPatternContract();
 
-    protected abstract String getTransactionFunction();
+    protected abstract List<String> getTransactionFunction();
 
     protected abstract Marketplace getMarketplace();
 
@@ -65,8 +67,8 @@ public abstract class TransactionPattern {
         String function = transaction.getInput().substring(0, 10);
         String marketplaceContract = transaction.getTo().toLowerCase();
 
-        return function.equalsIgnoreCase(getTransactionFunction())
-                && marketplaceContract.equalsIgnoreCase(getPatternContract()) &&
+        return getTransactionFunction().stream().map(String::toLowerCase).collect(Collectors.toSet()).contains(function.toLowerCase())
+                && getPatternContract().stream().map(String::toLowerCase).collect(Collectors.toSet()).contains(marketplaceContract) &&
                 transaction.getInput() != null & transaction.getInput().length() > 10;
     }
 }

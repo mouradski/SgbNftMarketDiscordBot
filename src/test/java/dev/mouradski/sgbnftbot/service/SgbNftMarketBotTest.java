@@ -77,6 +77,7 @@ public class SgbNftMarketBotTest {
 
     @ParameterizedTest
     @CsvSource({
+            "0x7d886ec455c77f3299a66100959bfb292641e78ea555ba74d5787a702e7f50eb,0x2972ea6e6cc45c5837ce909def032dd325b48415,0x180A2085A689Da36F18733d4b11a408A4958d12a,1389,150,SparklesNFT,BUY",
             "0x3c89e61195306b07aee8e5f41cfa42760b291db5d3f0e73f745947e05f4b652b,0xcdb019c0990c033724da55f5a04be6fd6ec1809d,0x29ca23b5ae0cbca059bc4d495fedc407b164018d,15995,25000,SparklesNFT,OFFER_ACCEPTED",
             "0x05b765c21e2238b100dabaf362cb3b2f2fb789bb485a21780c57902c40e5c774,0xe6e7db32df87f75609fb78d5f52753c2d3d98d84,0xe3609c5a35702782963309c38852b6fcdd59230d,2081,425,SparklesNFT,BUY",
             "0x545c89a5b8823658e5ab666699e6d0d97c98a4ea7881d0d8fb8e10462c9ffd56,0x2972ea6e6cc45c5837ce909def032dd325b48415,0x1e3cec41608c438ca7524d6fb042f905c46ecbae,3738,132.6,NFTSO,BUY",
@@ -97,7 +98,7 @@ public class SgbNftMarketBotTest {
         } else {
             Assertions.assertTrue(saleNotification.isPresent());
             Assertions.assertEquals(contract, saleNotification.get().getContract());
-            Assertions.assertEquals(buyer, saleNotification.get().getBuyer());
+            Assertions.assertEquals(buyer.toLowerCase(), saleNotification.get().getBuyer().toLowerCase());
             Assertions.assertEquals(tokenId, saleNotification.get().getTokenId());
             Assertions.assertEquals(price, saleNotification.get().getPrice());
             Assertions.assertEquals(marketplace, saleNotification.get().getMarketplace().toString());
@@ -112,7 +113,7 @@ public class SgbNftMarketBotTest {
             String jsonMsgTemplate = new String(Files.readAllBytes(Paths.get(getClass().getResource("/jsonMsgTemplate.json").toURI())));
 
             String expectedJsonMsg =
-                    jsonMsgTemplate.replace("_BUYER_", buyer)
+                    jsonMsgTemplate.replace("_BUYER_", buyer.toLowerCase())
                             .replace("_PRICE_", NumberFormat.getNumberInstance(Locale.US).format(price) + " SGB")
                             .replace("_TITLE_", "TOKEN_NAME #" + tokenId + " has been sold !")
                             .replace("_LISTING_URL_", marketplace.equalsIgnoreCase("NFTSO") ?  ("https://nftso.xyz/item-details/19/" + contract + "/" + tokenId) :
