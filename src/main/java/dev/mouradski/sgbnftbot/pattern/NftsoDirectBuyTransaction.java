@@ -7,6 +7,8 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class NftsoDirectBuyTransaction extends TransactionPattern {
@@ -17,13 +19,13 @@ public class NftsoDirectBuyTransaction extends TransactionPattern {
     }
 
     @Override
-    protected String getPatternContract() {
-        return "0x5cb9398ca62e941ef4d4aa5f7003f332c3b4b132";
+    protected List<String> getPatternContract() {
+        return Arrays.asList("0x5cb9398ca62e941ef4d4aa5f7003f332c3b4b132");
     }
 
     @Override
-    protected String getTransactionFunction() {
-        return "0x1f6a8318";
+    protected List<String> getTransactionFunction() {
+        return Arrays.asList("0x1f6a8318");
     }
 
     @Override
