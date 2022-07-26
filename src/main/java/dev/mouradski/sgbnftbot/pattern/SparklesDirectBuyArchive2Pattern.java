@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 @Component
-public class SparklesDirectBuyOldContractPattern extends TransactionPattern {
+public class SparklesDirectBuyArchive2Pattern extends TransactionPattern {
 
     @Override
     protected TransactionType getTransactionType() {
@@ -19,7 +19,7 @@ public class SparklesDirectBuyOldContractPattern extends TransactionPattern {
 
     @Override
     protected String getPatternContract() {
-        return "0xb5318d47129a09a6c8f2a0ddcd8f2934e6b73141";
+        return "0xc1c02a72de998a4659b8d430e741446d1f5e268f";
     }
 
     @Override
