@@ -154,9 +154,9 @@ public class IpfsHelper {
 
         int i = 0;
 
-        Optional<String> metaIpfsUri = null;
+        Optional<String> metaIpfsUri = Optional.empty();
 
-        while (i++ < 100 && metaIpfsUri == null) {
+        while (i++ < 100 && !metaIpfsUri.isPresent()) {
             metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i));
         }
 
