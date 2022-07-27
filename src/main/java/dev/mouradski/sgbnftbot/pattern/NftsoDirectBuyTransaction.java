@@ -17,11 +17,6 @@ public class NftsoDirectBuyTransaction extends TransactionPattern {
     }
 
     @Override
-    protected String getPatternContract() {
-        return "0x5cb9398ca62e941ef4d4aa5f7003f332c3b4b132";
-    }
-
-    @Override
     protected String getTransactionFunction() {
         return "0x1f6a8318";
     }

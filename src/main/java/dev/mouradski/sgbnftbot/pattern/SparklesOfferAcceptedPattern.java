@@ -19,11 +19,6 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
     }
 
     @Override
-    protected String getPatternContract() {
-        return "0x5f05d41f39589d52c8a13f87ac6f45edb66b03ae";
-    }
-
-    @Override
     protected String getTransactionFunction() {
         return "0xc815729d";
     }
