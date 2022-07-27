@@ -23,8 +23,6 @@ public abstract class TransactionPattern {
 
     protected abstract TransactionType getTransactionType();
 
-    protected abstract String getPatternContract();
-
     protected abstract String getTransactionFunction();
 
     protected abstract Marketplace getMarketplace();
@@ -63,10 +61,8 @@ public abstract class TransactionPattern {
 
     public boolean matches(Transaction transaction) {
         String function = transaction.getInput().substring(0, 10);
-        String marketplaceContract = transaction.getTo().toLowerCase();
 
-        return function.equalsIgnoreCase(getTransactionFunction())
-                && marketplaceContract.equalsIgnoreCase(getPatternContract()) &&
+        return function.equalsIgnoreCase(getTransactionFunction()) &&
                 transaction.getInput() != null & transaction.getInput().length() > 10;
     }
 }
