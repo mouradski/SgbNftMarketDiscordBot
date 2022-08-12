@@ -43,10 +43,6 @@ public class IpfsHelper {
     public void init() {
         MultiAddress addr = new MultiAddress("/ip4/195.154.200.130/tcp/5001");
         ipfsList.add(new IPFS(addr.getHost(), addr.getTCPPort(), "/api/v0/", 20000, 30000, false));
-
-        MultiAddress addrBackup = new MultiAddress("/dnsaddr/ipfs.infura.io/tcp/5001/https");
-        ipfsList.add(new IPFS(addrBackup.getHost(), addrBackup.getTCPPort(), "/api/v0/", 20000, 250000, true));
-
     }
 
     public Optional<byte[]> get(String uri) {
