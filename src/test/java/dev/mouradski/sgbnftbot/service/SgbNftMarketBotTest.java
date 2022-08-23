@@ -77,6 +77,8 @@ public class SgbNftMarketBotTest {
 
     @ParameterizedTest
     @CsvSource({
+            "0x8ffceeea0dd015cab55c47f0ccce4646ff6717020a054811bfa17bad6b295e15,0x4f52a074de9f2651d2f711fee63fee9e3b439a7e,0x180A2085A689Da36F18733d4b11a408A4958d12a,263,6.15,FlrDrops,OFFER_ACCEPTED",
+            "0xca61ece26efe298237069c14148e86a6cfdf765253ea95bf566e932aad2c31e5,0x1549b428362dc4fccbd7e719ac8e52752b27f47c,0x1e3cec41608c438ca7524d6fb042f905c46ecbae,1826,10.25,FlrDrops,BUY",
             "0x425b0774d12187aca7046a6d82a48d5847e6462c3c2c1f2e016dfb8e122393aa,0x279a222a18c033124ab02290ddec97912a8b7185,0x41bb2aa1230e749d121360073a1104436dbcf7c9,2125,1050,SparklesNFT,BUY",
             "0x45ef4261f39f66933e19f49fe6148c69126cd2ff8e83d5ac47a58175922bda05,0xc30ef62e7fc807e461b130ab3c435145ec693b8c,0xb11d8741a984556634b8c5b41ce1f047e0ffd894,3929,1900,SparklesNFT,BUY",
             "0x1401f63800edfabf1c0054753081b67920064fa48925ab51868aec1f38d50e2f,0xd83ae2c70916a2360e23683a0d3a3556b2c09935,0x1f71147463a88d0bc1e066dec9ba4c58a536b85c,14836,180,SparklesNFT,BUY",
@@ -91,7 +93,9 @@ public class SgbNftMarketBotTest {
             "0xe697b51a94a6648337d979d8bd5a1c8ee97ede12bd87a3dad33d023c96527990,0xcdb019c0990c033724da55f5a04be6fd6ec1809d,0x7b85de63bfaf89e8b6bffe6f38697a1115cef8e3,20195,1390,SparklesNFT,BUY",
             "0x5c8166e6873a2612b5c042aaa0b94834b1752183795bf36ee75b5de95d81c146,0xcdb019c0990c033724da55f5a04be6fd6ec1809d,0x7b85de63bfaf89e8b6bffe6f38697a1115cef8e3,21972,1200,SparklesNFT,BUY",
             "0xce5781c10cf196a6b59683b9976b4509e677210c4d5506a7df53c5713b0c24d9,,,,,,",
-            "0x97321d554675b4c0e85ce99a9abeb77c4148d6522657033572ab327631a5d514,,,,,,"})
+            "0x97321d554675b4c0e85ce99a9abeb77c4148d6522657033572ab327631a5d514,,,,,,"}
+            )
+
     public void testProcess(String transactionHash, String contract, String buyer, Long tokenId, Double price, String marketplace, String transactionType) throws URISyntaxException, IOException {
         Optional<SaleNotification> saleNotification = sgbNftMarketBotWIP.process(transactionHash);
 
@@ -114,12 +118,26 @@ public class SgbNftMarketBotTest {
 
             String jsonMsgTemplate = new String(Files.readAllBytes(Paths.get(getClass().getResource("/jsonMsgTemplate.json").toURI())));
 
+            String marketplaceUrl = "";
+
+            switch (marketplace) {
+                case "NFTSO":
+                    marketplaceUrl = "https://nftso.xyz/item-details/19/" + contract + "/" + tokenId;
+                    break;
+                case "SparklesNFT":
+                    marketplaceUrl = "https://www.sparklesnft.com/item/" + contract + "_" + tokenId;
+                    break;
+                case "FlrDrops":
+                    marketplaceUrl = "https://xfd.flr.finance/t/"+ contract + "/" + tokenId;
+
+                    break;
+            }
+
             String expectedJsonMsg =
                     jsonMsgTemplate.replace("_BUYER_", buyer.toLowerCase())
                             .replace("_PRICE_", NumberFormat.getNumberInstance(Locale.US).format(price) + " SGB")
                             .replace("_TITLE_", "TOKEN_NAME #" + tokenId + " has been sold !")
-                            .replace("_LISTING_URL_", marketplace.equalsIgnoreCase("NFTSO") ?  ("https://nftso.xyz/item-details/19/" + contract + "/" + tokenId) :
-                                            ("https://www.sparklesnft.com/item/" + contract + "_" + tokenId))
+                            .replace("_LISTING_URL_", marketplaceUrl)
                             .replace("_MARKETPLACE_", marketplace)
                             .replace("_TOKEN_ID_", tokenId.toString())
                             .replace("_TRANSACTION_TYPE_", "BUY".equalsIgnoreCase(transactionType) ? "Buy" : "Offer Accepted");

@@ -2,5 +2,6 @@ package dev.mouradski.sgbnftbot.model;
 
 public enum Marketplace {
     SparklesNFT,
-    NFTSO
+    NFTSO,
+    FlrDrops
 }

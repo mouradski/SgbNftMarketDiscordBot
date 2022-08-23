@@ -60,9 +60,14 @@ public abstract class TransactionPattern {
 
 
     public boolean matches(Transaction transaction) {
-        String function = transaction.getInput().substring(0, 10);
 
-        return function.equalsIgnoreCase(getTransactionFunction()) &&
-                transaction.getInput() != null & transaction.getInput().length() > 10;
+        try {
+            String function = transaction.getInput().substring(0, 10);
+
+            return function.equalsIgnoreCase(getTransactionFunction()) &&
+                    transaction.getInput() != null & transaction.getInput().length() > 10;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
