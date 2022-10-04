@@ -22,8 +22,11 @@ import java.util.Arrays;
 @Configuration
 public class Config {
 
-    @Value("${web3.provider}")
-    private String wssProviderUrl;
+    @Value("${web3.songbird.provider}")
+    private String wssSongbirdProviderUrl;
+
+    @Value("${web3.flare.provider}")
+    private String wssFlareProviderUrl;
 
     @Value("${discord.token}")
     private String discordToken;
@@ -43,9 +46,21 @@ public class Config {
     }
 
 
-    @Bean
-    public Web3j web3() throws ConnectException, URISyntaxException {
-        WebSocketClient webSocketClient = new WebSocketClient(new URI(wssProviderUrl));
+    @Bean("songbirdWeb3")
+    public Web3j songbirdWeb3() throws ConnectException, URISyntaxException {
+        WebSocketClient webSocketClient = new WebSocketClient(new URI(wssSongbirdProviderUrl));
+
+        WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
+
+        webSocketService.connect();
+
+        return Web3j.build(webSocketService);
+    }
+
+
+    @Bean("flareWeb3")
+    public Web3j flaredWeb3() throws ConnectException, URISyntaxException {
+        WebSocketClient webSocketClient = new WebSocketClient(new URI(wssFlareProviderUrl));
 
         WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
 

@@ -1,6 +1,7 @@
 package dev.mouradski.sgbnftbot.service;
 
 import dev.mouradski.sgbnftbot.model.Meta;
+import dev.mouradski.sgbnftbot.model.Network;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.Subscription;
 import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @EnableScheduling
@@ -45,8 +47,8 @@ public class SgbNftMarketBot {
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
 
-    public SgbNftMarketBot(@Autowired SubscriptionService subscriptionService, @Autowired IpfsHelper ipfsHelper,
-                           @Autowired EthHelper ethHelper, @Autowired List<TransactionPattern> transactionPatterns,
+    public SgbNftMarketBot(SubscriptionService subscriptionService, IpfsHelper ipfsHelper,
+                           EthHelper ethHelper, List<TransactionPattern> transactionPatterns,
                            @Autowired(required = false) DiscordApi discordApi) {
         this.subscriptionService = subscriptionService;
         this.ipfsHelper = ipfsHelper;
@@ -77,9 +79,12 @@ public class SgbNftMarketBot {
                 }
             });
 
-            this.ethHelper.getFlowable().subscribe(transaction -> {
-                processExecutor.execute(() -> {
-                    process(transaction);
+
+            Stream.of(Network.SONGBIRD, Network.FLARE).forEach(network -> {
+                this.ethHelper.getFlowable(network).subscribe(transaction -> {
+                    processExecutor.execute(() -> {
+                        process(transaction, network);
+                    });
                 });
             });
         }
@@ -95,9 +100,13 @@ public class SgbNftMarketBot {
             if (contract != null && !contract.trim().isEmpty() && contract.trim().length() == 42) {
                 subscriptionsExecutor.execute(() -> {
                     try {
-                        subscribeContract(event.getChannel(), contract.toLowerCase(), event.getServer().orElse(null));
+                        subscribeContract(event.getChannel(), contract.toLowerCase(), event.getServer().orElse(null), Network.SONGBIRD);
                     } catch (Exception e) {
-                        log.error("Error subscribing contract : {}, channelId : {}", contract, event.getChannel().getIdAsString(), e);
+                        try {
+                            subscribeContract(event.getChannel(), contract.toLowerCase(), event.getServer().orElse(null), Network.FLARE);
+                        } catch (Exception e2) {
+                            log.error("Error subscribing contract : {}, channelId : {}", contract, event.getChannel().getIdAsString(), e2);
+                        }
                     }
                 });
             }
@@ -142,19 +151,19 @@ public class SgbNftMarketBot {
         }
     }
 
-    public Optional<SaleNotification> process(String transactionHash) {
+    public Optional<SaleNotification> process(String transactionHash, Network network) {
         try {
-            return process(ethHelper.getTransaction(transactionHash));
+            return process(ethHelper.getTransaction(transactionHash, network), network);
         } catch (IOException e) {
             log.error("Error retreiving transaction {}", transactionHash, e);
             return Optional.empty();
         }
     }
 
-    public Optional<SaleNotification> process(Transaction transaction) {
+    public Optional<SaleNotification> process(Transaction transaction, Network network) {
         try {
             Optional<TransactionPattern> matchingTransactionPattern = transactionPatterns.stream()
-                    .filter(pattern -> pattern.matches(transaction))
+                    .filter(pattern -> pattern.matches(transaction, network))
                     .findFirst();
 
             if (matchingTransactionPattern.isPresent()) {
@@ -164,7 +173,7 @@ public class SgbNftMarketBot {
 
                 saleNotification.setSubscriptions(subscriptions);
 
-                notifySale(saleNotification);
+                notifySale(saleNotification, network);
                 return Optional.of(saleNotification);
             } else {
                 return Optional.empty();
@@ -175,17 +184,17 @@ public class SgbNftMarketBot {
         }
     }
 
-    public void subscribeContract(String channel, String contract, Server server) throws IOException {
-        subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server);
+    public void subscribeContract(String channel, String contract, Server server, Network network) throws IOException {
+        subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server, network);
     }
 
-    private void subscribeContract(TextChannel channel, String contract, Server server) throws IOException {
+    private void subscribeContract(TextChannel channel, String contract, Server server, Network network) throws IOException {
 
         if (subscriptionService.subscribeContract(contract, channel, server)) {
             return;
         }
 
-        Optional<Meta> meta = ipfsHelper.retreiveMetaFromCollection(contract);
+        Optional<Meta> meta = ipfsHelper.retreiveMetaFromCollection(contract, network);
 
 
         subscriptionService.subscribeContract(contract, meta, channel, server);
@@ -197,7 +206,7 @@ public class SgbNftMarketBot {
         subscriptionService.unsubscribe(channel, contract);
     }
 
-    private void notifySale(SaleNotification saleNotification) throws IOException {
+    private void notifySale(SaleNotification saleNotification, Network network) throws IOException {
 
         if (discordApi == null) {
             return;
@@ -221,7 +230,7 @@ public class SgbNftMarketBot {
 
         String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
-        Optional<String> metaUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId());
+        Optional<String> metaUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId(), network);
         String metaIpfsUri = null;
 
         if (metaUri.isPresent()) {

@@ -23,7 +23,7 @@ public class SubscriptionService {
     private SubscriptionRepository subscriptionRepository;
 
 
-    public SubscriptionService(@Autowired SubscriptionRepository subscriptionRepository) {
+    public SubscriptionService(SubscriptionRepository subscriptionRepository) {
         this.subscriptionRepository = subscriptionRepository;
     }
 
