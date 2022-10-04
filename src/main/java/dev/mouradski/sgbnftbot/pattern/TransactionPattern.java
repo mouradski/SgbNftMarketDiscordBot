@@ -1,6 +1,7 @@
 package dev.mouradski.sgbnftbot.pattern;
 
 import dev.mouradski.sgbnftbot.model.Marketplace;
+import dev.mouradski.sgbnftbot.model.Network;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.TransactionType;
 import dev.mouradski.sgbnftbot.service.EthHelper;
@@ -18,8 +19,7 @@ public abstract class TransactionPattern {
     @Autowired
     protected EthHelper ethHelper;
 
-    @Autowired
-    protected Web3j web3;
+    protected abstract Network getNetwork();
 
     protected abstract TransactionType getTransactionType();
 
@@ -59,7 +59,11 @@ public abstract class TransactionPattern {
     }
 
 
-    public boolean matches(Transaction transaction) {
+    public boolean matches(Transaction transaction, Network network) {
+
+        if (!getNetwork().equals(network)) {
+            return false;
+        }
 
         try {
             String function = transaction.getInput().substring(0, 10);

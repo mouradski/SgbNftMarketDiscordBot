@@ -1,15 +1,23 @@
-package dev.mouradski.sgbnftbot.pattern;
+package dev.mouradski.sgbnftbot.pattern.songbird;
 
 import dev.mouradski.sgbnftbot.model.Marketplace;
+import dev.mouradski.sgbnftbot.model.Network;
 import dev.mouradski.sgbnftbot.model.TransactionType;
+import dev.mouradski.sgbnftbot.pattern.TransactionPattern;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 @Component
-public class FlrDropsDirectBuyTransaction extends TransactionPattern {
+public class SparklesDirectBuyPattern extends TransactionPattern {
+
+    @Override
+    protected Network getNetwork() {
+        return Network.SONGBIRD;
+    }
 
     @Override
     protected TransactionType getTransactionType() {
@@ -18,18 +26,18 @@ public class FlrDropsDirectBuyTransaction extends TransactionPattern {
 
     @Override
     protected String getTransactionFunction() {
-        return "0xe99a3f80";
+        return "0x18418ee7";
     }
 
     @Override
     protected Marketplace getMarketplace() {
-        return Marketplace.FlrDrops;
+        return Marketplace.SparklesNFT;
     }
 
     @Override
     protected String extractNftContract(Transaction transaction) throws IOException {
-        Log log = ethHelper.getLog(transaction.getHash());
-        return log.getAddress();
+        Log log = ethHelper.getLog(transaction.getHash(), getNetwork());
+        return log.getTopics().get(1).replace("0x000000000000000000000000", "0x");
     }
 
     @Override
@@ -40,23 +48,17 @@ public class FlrDropsDirectBuyTransaction extends TransactionPattern {
 
     @Override
     protected Long extractTokenId(Transaction transaction) throws IOException {
-        Log log = ethHelper.getLog(transaction.getHash());
-        return Long.parseLong(log.getTopics().get(3).replace("0x", ""), 16);
+        Log log = ethHelper.getLog(transaction.getHash(), getNetwork());
+        return Long.parseLong(log.getTopics().get(2).replace("0x", ""), 16);
     }
 
     @Override
     protected String getMarketplaceListingUrl(Transaction transaction) throws IOException {
-        return "https://xfd.flr.finance/t/"+ extractNftContract(transaction) + "/" + extractTokenId(transaction);
+        return "https://www.sparklesnft.com/item/" + extractNftContract(transaction) + "_" + extractTokenId(transaction);
     }
 
     @Override
-    protected Double extracePrice(Transaction transaction) throws IOException {
+    protected Double extracePrice(Transaction transaction) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         return ethHelper.valueToDouble(transaction.getValue());
-    }
-
-
-    @Override
-    public boolean matches(Transaction transaction) {
-        return super.matches(transaction) && transaction.getInput().length() == 4170;
     }
 }

@@ -1,8 +1,9 @@
 package dev.mouradski.sgbnftbot.service;
 
+import dev.mouradski.sgbnftbot.model.Network;
 import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
@@ -26,14 +27,17 @@ import java.util.Optional;
 @Slf4j
 public class EthHelper {
 
-    private Web3j web3;
+    private Web3j songbirdWeb3;
 
-    public EthHelper(@Autowired Web3j web3) {
-        this.web3 = web3;
+    private Web3j flareWeb3;
+
+    public EthHelper(@Qualifier("songbirdWeb3") Web3j songbirdWeb3, @Qualifier("flareWeb3") Web3j flareWeb3) {
+        this.songbirdWeb3 = songbirdWeb3;
+        this.flareWeb3 = flareWeb3;
     }
 
-    public Log getLog(String trxHash) throws IOException {
-        EthGetTransactionReceipt transactionReceipt = web3.ethGetTransactionReceipt(trxHash).send();
+    public Log getLog(String trxHash, Network network) throws IOException {
+        EthGetTransactionReceipt transactionReceipt = getWeb3(network).ethGetTransactionReceipt(trxHash).send();
         return transactionReceipt.getResult().getLogs().stream().filter(logl -> logl.getTopics().size() == 4).findFirst().orElse(null);
     }
 
@@ -41,16 +45,16 @@ public class EthHelper {
         return value.divide(BigInteger.valueOf(1000000000000000l)).doubleValue() / 1000;
     }
 
-    public Transaction getTransaction(String trxHash) throws IOException {
-        return web3.ethGetTransactionByHash(trxHash).send().getTransaction().get();
+    public Transaction getTransaction(String trxHash, Network network) throws IOException {
+        return getWeb3(network).ethGetTransactionByHash(trxHash).send().getTransaction().get();
     }
 
-    public Flowable<Transaction> getFlowable() {
-        return web3.transactionFlowable();
+    public Flowable<Transaction> getFlowable(Network network) {
+        return getWeb3(network).transactionFlowable();
     }
 
 
-    public Optional<String> getTokenUri(String contract, Long tokenId) {
+    public Optional<String> getTokenUri(String contract, Long tokenId, Network network) {
         try {
             org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                     "tokenURI",
@@ -61,7 +65,7 @@ public class EthHelper {
             String encodedFunction = FunctionEncoder.encode(function);
 
             org.web3j.protocol.core.methods.response.EthCall response =
-                    web3.ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, contract, encodedFunction), DefaultBlockParameterName.LATEST)
+                    getWeb3(network).ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, contract, encodedFunction), DefaultBlockParameterName.LATEST)
                             .sendAsync().get();
 
             List<Type> someTypes = FunctionReturnDecoder.decode(
@@ -71,6 +75,14 @@ public class EthHelper {
         } catch (Exception e) {
             log.error("Error retrieving token URI, contract : {}, id : {}", contract, tokenId);
             return Optional.empty();
+        }
+    }
+
+    public Web3j getWeb3(Network network) {
+        if (Network.FLARE.equals(network)) {
+            return flareWeb3;
+        } else {
+            return songbirdWeb3;
         }
     }
 }

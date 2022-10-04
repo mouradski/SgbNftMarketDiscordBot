@@ -3,11 +3,11 @@ package dev.mouradski.sgbnftbot.service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.mouradski.sgbnftbot.model.Meta;
+import dev.mouradski.sgbnftbot.model.Network;
 import io.ipfs.api.IPFS;
 import io.ipfs.multiaddr.MultiAddress;
 import io.ipfs.multihash.Multihash;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -34,7 +34,7 @@ public class IpfsHelper {
 
     private List<String> ipfsGateways = Arrays.asList("https://ipfs.io/ipfs/", "https://sparkles.mypinata.cloud/ipfs/", "https://ipfs.io/ipfs/");
 
-    public IpfsHelper(@Autowired RestTemplate restTemplate, @Autowired EthHelper ethHelper) {
+    public IpfsHelper(RestTemplate restTemplate, EthHelper ethHelper) {
         this.restTemplate = restTemplate;
         this.ethHelper = ethHelper;
     }
@@ -146,14 +146,14 @@ public class IpfsHelper {
     }
 
 
-    public Optional<Meta> retreiveMetaFromCollection(String contract) throws IOException {
+    public Optional<Meta> retreiveMetaFromCollection(String contract, Network network) throws IOException {
 
         int i = 0;
 
         Optional<String> metaIpfsUri = Optional.empty();
 
         while (i++ < 100 && !metaIpfsUri.isPresent()) {
-            metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i));
+            metaIpfsUri = ethHelper.getTokenUri(contract, Long.valueOf(i), network);
         }
 
 
