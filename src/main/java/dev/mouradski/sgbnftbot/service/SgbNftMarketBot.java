@@ -254,6 +254,7 @@ public class SgbNftMarketBot {
                 .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " SGB")
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
                 .addInlineField("TransactionType", transactionTypeValue)
+                .addInlineField("Network", saleNotification.getNetwork().toString())
                 .setUrl(saleNotification.getMarketplaceListingUrl())
                 .setColor(Color.BLUE);
 

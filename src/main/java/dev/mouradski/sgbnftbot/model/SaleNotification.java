@@ -18,6 +18,7 @@ public class SaleNotification {
     private Long tokenId;
     private String marketplaceListingUrl;
     private Marketplace marketplace;
+    private Network network;
     private TransactionType transactionType;
     private String buyer;
     private String transactionHash;
