@@ -68,6 +68,6 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
                 .sum();
 
 
-        return value.doubleValue() / 1000 ;
+        return value.doubleValue() / 2 / 1000 ;
     }
 }
