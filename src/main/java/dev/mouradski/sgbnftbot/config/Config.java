@@ -1,5 +1,6 @@
 package dev.mouradski.sgbnftbot.config;
 
+import okhttp3.OkHttpClient;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,22 +12,12 @@ import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.websocket.WebSocketClient;
-import org.web3j.protocol.websocket.WebSocketService;
+import org.web3j.protocol.http.HttpService;
 
-import java.net.ConnectException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 
 @Configuration
 public class Config {
-
-    @Value("${web3.songbird.provider}")
-    private String wssSongbirdProviderUrl;
-
-    @Value("${web3.flare.provider}")
-    private String wssFlareProviderUrl;
 
     @Value("${discord.token}")
     private String discordToken;
@@ -47,26 +38,24 @@ public class Config {
 
 
     @Bean("songbirdWeb3")
-    public Web3j songbirdWeb3() throws ConnectException, URISyntaxException {
-        WebSocketClient webSocketClient = new WebSocketClient(new URI(wssSongbirdProviderUrl));
+    public Web3j songbirdWeb3(@Value("${web3.songbird.provider}") String songbirdRpcProviderUrl) {
+        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+        OkHttpClient client = httpClient.build();
 
-        WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
+        HttpService httpService = new HttpService(songbirdRpcProviderUrl, client);
 
-        webSocketService.connect();
-
-        return Web3j.build(webSocketService);
+        return Web3j.build(httpService);
     }
 
 
     @Bean("flareWeb3")
-    public Web3j flaredWeb3() throws ConnectException, URISyntaxException {
-        WebSocketClient webSocketClient = new WebSocketClient(new URI(wssFlareProviderUrl));
+    public Web3j flaredWeb3(@Value("${web3.flare.provider}") String flareRpcProviderUrl) {
+        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+        OkHttpClient client = httpClient.build();
 
-        WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
+        HttpService httpService = new HttpService(flareRpcProviderUrl, client);
 
-        webSocketService.connect();
-
-        return Web3j.build(webSocketService);
+        return Web3j.build(httpService);
     }
 
     @Bean

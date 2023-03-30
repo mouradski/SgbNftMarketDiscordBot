@@ -246,12 +246,12 @@ public class SgbNftMarketBot {
         }
 
         Optional<byte[]> imageContent = ipfsHelper.get(meta.get().getImage());
-        
-        String token = Network.FLARE.equals(network) ? "FLR" : "SGB";
+
+	String token = Network.FLARE.equals(network) ? "FLR" : "SGB";
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
-                .addField("Buyer", saleNotification.getBuyer())
+                //.addField("Buyer", saleNotification.getBuyer())
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
                 .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " " + token)
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())

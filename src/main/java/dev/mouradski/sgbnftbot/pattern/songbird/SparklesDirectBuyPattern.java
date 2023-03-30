@@ -26,7 +26,7 @@ public class SparklesDirectBuyPattern extends TransactionPattern {
 
     @Override
     protected String getTransactionFunction() {
-        return "0x18418ee7";
+        return "0x0b260134";
     }
 
     @Override
