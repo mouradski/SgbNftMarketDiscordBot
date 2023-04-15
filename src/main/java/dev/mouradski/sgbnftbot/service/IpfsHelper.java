@@ -118,11 +118,10 @@ public class IpfsHelper {
        return Optional.empty();
     }
 
-    private HttpEntity buildEmptyEntity() {
+    private HttpEntity<String> buildEmptyEntity() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.115 Safari/537.36");
-        HttpEntity entity = new HttpEntity("", headers);
-        return entity;
+        return new HttpEntity("", headers);
     }
 
     public Optional<byte[]> get(String uri, IPFS ipfsProvider) throws IOException {

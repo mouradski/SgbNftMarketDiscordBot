@@ -52,7 +52,7 @@ public class SubscriptionService {
             channel.sendMessage(new EmbedBuilder().setTitle("Error retrieving contract metadata, retry later !").setColor(Color.RED));
         }
 
-        String nftName = meta.get().getName().replaceAll("#[0-9]+", "").replace("-", "").trim();
+        String nftName = meta.get().getName().replaceAll("#\\d+", "").replace("-", "").trim();
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("Subscription successfully !")

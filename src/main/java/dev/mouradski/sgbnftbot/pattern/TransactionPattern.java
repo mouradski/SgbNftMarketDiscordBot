@@ -51,7 +51,8 @@ public abstract class TransactionPattern {
                 .buyer(buyer)
                 .transactionType(transactionType)
                 .marketplace(getMarketplace())
-                .price(price.doubleValue()).tokenId(tokenId)
+                .price(price)
+                .tokenId(tokenId)
                 .marketplaceListingUrl(marketplaceListingUrl)
                 .transactionHash(transaction.getHash())
                 .network(this.getNetwork())
@@ -69,7 +70,7 @@ public abstract class TransactionPattern {
             String function = transaction.getInput().substring(0, 10);
 
             return function.equalsIgnoreCase(getTransactionFunction()) &&
-                    transaction.getInput() != null & transaction.getInput().length() > 10;
+                    transaction.getInput() != null && transaction.getInput().length() > 10;
         } catch (Exception e) {
             return false;
         }

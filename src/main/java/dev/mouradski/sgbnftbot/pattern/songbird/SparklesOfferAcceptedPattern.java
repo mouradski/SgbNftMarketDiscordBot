@@ -58,10 +58,10 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
                 .map(log -> log.getData().replace("0x", ""))
                 .map(data -> {
                     try {
-                        return new BigInteger(TypeDecoder.instantiateType("uint256", data).getValue().toString()).divide(new BigInteger("1000000000000000"));
+                        return new BigInteger(TypeDecoder.instantiateType("uint256", data).getValue().toString()).divide(BigInteger.valueOf(1000000000000000l));
                     } catch (Exception e) {
                         e.printStackTrace();
-                        return new BigInteger("0");
+                        return BigInteger.ZERO;
                     }
                 })
                 .mapToDouble(BigInteger::doubleValue)

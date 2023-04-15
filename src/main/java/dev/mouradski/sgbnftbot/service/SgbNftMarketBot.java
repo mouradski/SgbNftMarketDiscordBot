@@ -42,7 +42,7 @@ public class SgbNftMarketBot {
 
     private List<TransactionPattern> transactionPatterns;
     
-    private final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
     private ExecutorService processExecutor = Executors.newFixedThreadPool(3);
@@ -62,9 +62,7 @@ public class SgbNftMarketBot {
 
     @PostConstruct
     public void start() {
-        subscriptionService.getAll().forEach(subscription -> {
-            contracts.add(subscription.getContract());
-        });
+        subscriptionService.getAll().forEach(subscription -> contracts.add(subscription.getContract()));
 
         if (discordApi != null) {
             discordApi.addMessageCreateListener(event -> {
@@ -80,13 +78,13 @@ public class SgbNftMarketBot {
             });
 
 
-            Stream.of(Network.SONGBIRD, Network.FLARE).forEach(network -> {
-                this.ethHelper.getFlowable(network).subscribe(transaction -> {
-                    processExecutor.execute(() -> {
-                        process(transaction, network);
-                    });
-                });
-            });
+            Stream.of(Network.SONGBIRD, Network.FLARE).forEach(network ->
+                this.ethHelper.getFlowable(network).subscribe(transaction ->
+                    processExecutor.execute(() ->
+                        process(transaction, network)
+                    )
+                )
+            );
         }
     }
 
@@ -182,10 +180,6 @@ public class SgbNftMarketBot {
         } catch (Exception e) {
             return Optional.empty();
         }
-    }
-
-    public void subscribeContract(String channel, String contract, Server server, Network network) throws IOException {
-        subscribeContract(discordApi.getTextChannelById(channel).get(), contract, server, network);
     }
 
     private void subscribeContract(TextChannel channel, String contract, Server server, Network network) throws IOException {

@@ -30,7 +30,7 @@ public class Config {
 
 
         converter.setSupportedMediaTypes(
-                Arrays.asList(new MediaType[]{MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM}));
+                Arrays.asList(MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM));
 
         restTemplate.setMessageConverters(Arrays.asList(converter, new FormHttpMessageConverter()));
         return restTemplate;
