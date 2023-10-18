@@ -261,9 +261,7 @@ public class SgbNftMarketBot {
         saleNotification.getSubscriptions().forEach(subscription -> {
             var channel = discordApi.getTextChannelById(subscription.getChannelId());
             try {
-             //   channel.ifPresent(textChannel -> textChannel.sendMessage(embed).join());
-
-                System.out.println("Send Message XXXXX");
+                channel.ifPresent(textChannel -> textChannel.sendMessage(embed).join());
             } catch (Exception e) {
                 log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.get().getIdAsString(), e);
             }
