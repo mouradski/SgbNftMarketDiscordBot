@@ -40,12 +40,12 @@ public abstract class TransactionPattern {
     public SaleNotification buildNotification(Transaction transaction) throws IOException, ClassNotFoundException,
             InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
-        String buyer = extractBuyer(transaction);
-        Long tokenId = extractTokenId(transaction);
-        Double price = extracePrice(transaction);
-        TransactionType transactionType = getTransactionType();
-        String nftContract = extractNftContract(transaction).toLowerCase();
-        String marketplaceListingUrl = getMarketplaceListingUrl(transaction);
+        var buyer = extractBuyer(transaction);
+        var tokenId = extractTokenId(transaction);
+        var price = extracePrice(transaction);
+        var transactionType = getTransactionType();
+        var nftContract = extractNftContract(transaction).toLowerCase();
+        var marketplaceListingUrl = getMarketplaceListingUrl(transaction);
 
         return SaleNotification.builder().contract(nftContract)
                 .buyer(buyer)
@@ -67,7 +67,7 @@ public abstract class TransactionPattern {
         }
 
         try {
-            String function = transaction.getInput().substring(0, 10);
+            var function = transaction.getInput().substring(0, 10);
 
             return function.equalsIgnoreCase(getTransactionFunction()) &&
                     transaction.getInput() != null && transaction.getInput().length() > 10;

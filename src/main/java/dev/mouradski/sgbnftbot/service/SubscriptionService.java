@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,19 +47,19 @@ public class SubscriptionService {
     @Transactional
     public void subscribeContract(String contract, Optional<Meta> meta, TextChannel channel, Server server) {
 
-        if (!meta.isPresent()) {
+        if (meta.isEmpty()) {
             channel.sendMessage(new EmbedBuilder().setTitle("Error retrieving contract metadata, retry later !").setColor(Color.RED));
         }
 
-        String nftName = meta.get().getName().replaceAll("#\\d+", "").replace("-", "").trim();
+        var nftName = meta.get().getName().replaceAll("#\\d+", "").replace("-", "").trim();
 
-        EmbedBuilder embed = new EmbedBuilder()
+        var embed = new EmbedBuilder()
                 .setTitle("Subscription successfully !")
                 .addField("Project Name", nftName)
                 .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
                 .setColor(Color.BLUE);
 
-        Subscription subscription = Subscription.builder()
+        var subscription = Subscription.builder()
                 .channelId(channel.getIdAsString()).contract(contract)
                 .serverName(server == null ? null : server.getName()).tokenName(nftName).build();
 
@@ -72,10 +71,10 @@ public class SubscriptionService {
 
     @Transactional
     public void unsubscribe(TextChannel channel, String contract) {
-        Subscription subscription = subscriptionRepository.findById(SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract.toLowerCase()).build()).orElse(null);
+        var subscription = subscriptionRepository.findById(SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract.toLowerCase()).build()).orElse(null);
 
         if (subscription != null) {
-            EmbedBuilder embed = new EmbedBuilder()
+            var embed = new EmbedBuilder()
                     .setTitle("Unsubscribed successfully !")
                     .addField("Project Name", subscription.getTokenName())
                     .setColor(Color.BLUE);
@@ -89,14 +88,14 @@ public class SubscriptionService {
 
     @Transactional
     public boolean subscribeContract(String contract, TextChannel channel, Server server) {
-        SubscriptionId subscriptionId = SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build();
+        var subscriptionId = SubscriptionId.builder().channelId(channel.getIdAsString()).contract(contract).build();
 
-        Optional<Subscription> subscription = subscriptionRepository.findById(subscriptionId);
+        var subscription = subscriptionRepository.findById(subscriptionId);
 
 
         if (subscription.isPresent()) {
 
-            EmbedBuilder embed = new EmbedBuilder()
+            var embed = new EmbedBuilder()
                     .setTitle("Already subscribed to " + subscription.get().getTokenName())
                     .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
                     .setColor(Color.BLUE);
@@ -105,13 +104,13 @@ public class SubscriptionService {
             return true;
         }
 
-        List<Subscription> subscriptionList = subscriptionRepository.findByContract(contract);
+        var subscriptionList = subscriptionRepository.findByContract(contract);
 
         if (!subscriptionList.isEmpty()) {
 
-            Subscription firstSubscription = subscriptionList.get(0);
+            var firstSubscription = subscriptionList.get(0);
 
-            Subscription newSubscription = Subscription.builder()
+            var newSubscription = Subscription.builder()
                     .contract(contract)
                     .serverName(server == null ? null : server.getName())
                     .channelId(channel.getIdAsString())
@@ -119,7 +118,7 @@ public class SubscriptionService {
 
             subscriptionRepository.save(newSubscription);
 
-            EmbedBuilder nembed = new EmbedBuilder()
+            var nembed = new EmbedBuilder()
                     .setTitle("Subscription successfully !")
                     .addField("Project Name", newSubscription.getTokenName())
                     .addField("Command to unsubscribe", "!nftsales unsubscribe " + contract)
@@ -135,13 +134,13 @@ public class SubscriptionService {
 
     @Transactional(readOnly = true)
     public void listAndSendSubscriptions(TextChannel channel) {
-        Set<String> subscriptions = subscriptionRepository.findByChannelId(channel.getIdAsString()).stream()
+        var subscriptions = subscriptionRepository.findByChannelId(channel.getIdAsString()).stream()
                 .map(subscription -> subscription.getTokenName() + "  :  " + subscription.getContract())
                 .collect(Collectors.toSet());
 
         int count = 0;
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
 
         for (String subscriptionLine : subscriptions) {
             sb.append(subscriptionLine).append("\n");

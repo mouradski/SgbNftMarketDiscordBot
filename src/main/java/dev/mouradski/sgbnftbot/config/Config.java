@@ -19,15 +19,11 @@ import java.util.Arrays;
 @Configuration
 public class Config {
 
-    @Value("${discord.token}")
-    private String discordToken;
-
     @Bean
     public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
+        var restTemplate = new RestTemplate();
 
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-
+        var converter = new MappingJackson2HttpMessageConverter();
 
         converter.setSupportedMediaTypes(
                 Arrays.asList(MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM));
@@ -39,10 +35,10 @@ public class Config {
 
     @Bean("songbirdWeb3")
     public Web3j songbirdWeb3(@Value("${web3.songbird.provider}") String songbirdRpcProviderUrl) {
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        OkHttpClient client = httpClient.build();
+        var httpClient = new OkHttpClient.Builder();
+        var client = httpClient.build();
 
-        HttpService httpService = new HttpService(songbirdRpcProviderUrl, client);
+        var httpService = new HttpService(songbirdRpcProviderUrl, client);
 
         return Web3j.build(httpService);
     }
@@ -50,18 +46,19 @@ public class Config {
 
     @Bean("flareWeb3")
     public Web3j flaredWeb3(@Value("${web3.flare.provider}") String flareRpcProviderUrl) {
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        OkHttpClient client = httpClient.build();
+        var httpClient = new OkHttpClient.Builder();
+        var client = httpClient.build();
 
-        HttpService httpService = new HttpService(flareRpcProviderUrl, client);
+        var httpService = new HttpService(flareRpcProviderUrl, client);
 
         return Web3j.build(httpService);
     }
 
     @Bean
     @ConditionalOnProperty(value = "app.production")
-    public DiscordApi discordApi() {
-        return new DiscordApiBuilder().setToken(discordToken).setAllNonPrivilegedIntents()
+    public DiscordApi discordApi(@Value("${discord.token}") String discordToken) {
+        return new DiscordApiBuilder().setToken(discordToken)
+                .setAllIntents()
                 .login().join();
     }
 }

@@ -4,7 +4,6 @@ import dev.mouradski.sgbnftbot.model.Network;
 import dev.mouradski.sgbnftbot.model.TransactionType;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.TypeDecoder;
-import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
@@ -31,7 +30,7 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
 
     @Override
     protected String extractNftContract(Transaction transaction) throws IOException {
-        Log log = ethHelper.getLog(transaction.getHash(), getNetwork());
+        var log = ethHelper.getLog(transaction.getHash(), getNetwork());
         return log.getAddress();
     }
 
@@ -46,13 +45,13 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
 
     @Override
     protected Long extractTokenId(Transaction transaction) throws IOException {
-        Log log = ethHelper.getLog(transaction.getHash(), getNetwork());
+        var log = ethHelper.getLog(transaction.getHash(), getNetwork());
         return Long.parseLong(log.getTopics().get(3).replace("0x", ""), 16);
     }
 
     @Override
     protected Double extracePrice(Transaction transaction) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        Double value = ethHelper.getWeb3(getNetwork()).ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().stream()
+        var value = ethHelper.getWeb3(getNetwork()).ethGetTransactionReceipt(transaction.getHash()).send().getResult().getLogs().stream()
                 .filter(log -> log.getTopics().get(0).startsWith("0xddf252ad"))
                 .filter(log -> log.getTopics().size() == 3)
                 .map(log -> log.getData().replace("0x", ""))
@@ -68,6 +67,6 @@ public class SparklesOfferAcceptedPattern extends SparklesDirectBuyPattern {
                 .sum();
 
 
-        return value.doubleValue() / 2 / 1000 ;
+        return value / 2 / 1000 ;
     }
 }

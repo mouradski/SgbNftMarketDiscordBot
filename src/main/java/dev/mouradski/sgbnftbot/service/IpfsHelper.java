@@ -8,7 +8,10 @@ import io.ipfs.api.IPFS;
 import io.ipfs.multiaddr.MultiAddress;
 import io.ipfs.multihash.Multihash;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -41,23 +44,23 @@ public class IpfsHelper {
 
     @PostConstruct
     public void init() {
-        MultiAddress addr = new MultiAddress("/ip4/195.154.200.130/tcp/5001");
+        var addr = new MultiAddress("/ip4/195.154.200.130/tcp/5001");
         ipfsList.add(new IPFS(addr.getHost(), addr.getTCPPort(), "/api/v0/", 20000, 30000, false));
     }
 
     public Optional<byte[]> get(String uri) {
-        for (IPFS ipfs : ipfsList) {
+        for (var ipfs : ipfsList) {
             try {
                 return get(uri, ipfs);
             } catch (Exception e) {
-                log.error("error retrieving IPFS resource", uri, e.getMessage());
+                log.error("error retrieving IPFS resource {}", uri, e);
             }
         }
         return Optional.empty();
     }
 
     public Optional<Meta> getMeta(String uri) throws IOException {
-        Optional<byte[]> content = get(uri);
+        var content = get(uri);
 
         if (content.isPresent()) {
             return Optional.of(objectMapper.readValue(content.get(), Meta.class));
@@ -75,7 +78,7 @@ public class IpfsHelper {
     }
 
     public Optional<Meta> getMetaNoIpfsUrl(String url) {
-        ResponseEntity<dev.mouradski.sgbnftbot.model.Meta> responseEntity =
+        var responseEntity =
                 restTemplate.exchange(url, HttpMethod.GET, buildEmptyEntity(), dev.mouradski.sgbnftbot.model.Meta.class);
 
         if (HttpStatus.OK == responseEntity.getStatusCode()) {
@@ -95,7 +98,7 @@ public class IpfsHelper {
             jsonUrl = url.replace("ipfs://", httpGateway);
         }
 
-        ResponseEntity<dev.mouradski.sgbnftbot.model.Meta> responseEntity = restTemplate.exchange(jsonUrl, HttpMethod.GET, buildEmptyEntity(), dev.mouradski.sgbnftbot.model.Meta.class);
+        var responseEntity = restTemplate.exchange(jsonUrl, HttpMethod.GET, buildEmptyEntity(), dev.mouradski.sgbnftbot.model.Meta.class);
 
         if (HttpStatus.OK == responseEntity.getStatusCode()) {
             return Optional.of(responseEntity.getBody());
@@ -107,7 +110,7 @@ public class IpfsHelper {
     }
 
     public Optional<Meta> getMetaFromGateway(String url) {
-        for (String gateway: ipfsGateways) {
+        for (var gateway: ipfsGateways) {
             try {
                 return getMetaFromGateway(url, gateway);
             } catch (Exception e) {
@@ -119,19 +122,19 @@ public class IpfsHelper {
     }
 
     private HttpEntity<String> buildEmptyEntity() {
-        HttpHeaders headers = new HttpHeaders();
+        var headers = new HttpHeaders();
         headers.add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.115 Safari/537.36");
         return new HttpEntity("", headers);
     }
 
     public Optional<byte[]> get(String uri, IPFS ipfsProvider) throws IOException {
-        String[] ipfsArgs = uri.contains("/ipfs/") ?
+        var ipfsArgs = uri.contains("/ipfs/") ?
                 uri.split("/ipfs/")[1].split("/") :
                 uri.replace("ipfs://", "").split("/");
 
         byte[] content = null;
 
-        Multihash filePointer = Multihash.fromBase58(ipfsArgs[0]);
+        var filePointer = Multihash.fromBase58(ipfsArgs[0]);
 
         if (ipfsArgs.length == 1) {
             content = ipfsProvider.cat(filePointer);

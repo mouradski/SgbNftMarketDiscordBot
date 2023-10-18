@@ -8,19 +8,16 @@ import org.springframework.stereotype.Component;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -37,7 +34,7 @@ public class EthHelper {
     }
 
     public Log getLog(String trxHash, Network network) throws IOException {
-        EthGetTransactionReceipt transactionReceipt = getWeb3(network).ethGetTransactionReceipt(trxHash).send();
+        var transactionReceipt = getWeb3(network).ethGetTransactionReceipt(trxHash).send();
         return transactionReceipt.getResult().getLogs().stream().filter(logl -> logl.getTopics().size() == 4).findFirst().orElse(null);
     }
 
@@ -56,19 +53,19 @@ public class EthHelper {
 
     public Optional<String> getTokenUri(String contract, Long tokenId, Network network) {
         try {
-            org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+            var function = new org.web3j.abi.datatypes.Function(
                     "tokenURI",
                     Arrays.asList(new Uint256(tokenId)),
                     Arrays.asList(new TypeReference<Utf8String>() {
                     }));
 
-            String encodedFunction = FunctionEncoder.encode(function);
+            var encodedFunction = FunctionEncoder.encode(function);
 
-            org.web3j.protocol.core.methods.response.EthCall response =
+            var response =
                     getWeb3(network).ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, contract, encodedFunction), DefaultBlockParameterName.LATEST)
                             .sendAsync().get();
 
-            List<Type> someTypes = FunctionReturnDecoder.decode(
+            var someTypes = FunctionReturnDecoder.decode(
                     response.getValue(), function.getOutputParameters());
 
             return Optional.of(someTypes.get(0).toString());

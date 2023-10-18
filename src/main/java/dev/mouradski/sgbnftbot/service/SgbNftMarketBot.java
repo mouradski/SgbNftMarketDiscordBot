@@ -1,6 +1,5 @@
 package dev.mouradski.sgbnftbot.service;
 
-import dev.mouradski.sgbnftbot.model.Meta;
 import dev.mouradski.sgbnftbot.model.Network;
 import dev.mouradski.sgbnftbot.model.SaleNotification;
 import dev.mouradski.sgbnftbot.model.Subscription;
@@ -41,7 +40,7 @@ public class SgbNftMarketBot {
     private DiscordApi discordApi;
 
     private List<TransactionPattern> transactionPatterns;
-    
+
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
 
     private ExecutorService subscriptionsExecutor = Executors.newFixedThreadPool(3);
@@ -79,11 +78,11 @@ public class SgbNftMarketBot {
 
 
             Stream.of(Network.SONGBIRD, Network.FLARE).forEach(network ->
-                this.ethHelper.getFlowable(network).subscribe(transaction ->
-                    processExecutor.execute(() ->
-                        process(transaction, network)
+                    this.ethHelper.getFlowable(network).subscribe(transaction ->
+                            processExecutor.execute(() ->
+                                    process(transaction, network)
+                            )
                     )
-                )
             );
         }
     }
@@ -91,7 +90,7 @@ public class SgbNftMarketBot {
     private void processSubscribeCommand(MessageCreateEvent event) {
         if (event.getMessageAuthor().isServerAdmin() && event.getServer().isPresent()) {
 
-            String[] params = event.getMessageContent().split(" ");
+            var params = event.getMessageContent().split(" ");
 
             final String contract = params.length > 2 ? event.getMessageContent().split(" ")[2] : null;
 
@@ -118,7 +117,7 @@ public class SgbNftMarketBot {
     }
 
     private void processHelpCommand(MessageCreateEvent event) {
-        EmbedBuilder embed = new EmbedBuilder()
+        var embed = new EmbedBuilder()
                 .setTitle("Commandes :")
                 .addField("Subscription command", "!nftsales subscribe CONTRACT_ADDRESS")
                 .addField("Unsubscription command", "!nftsales unsubscribe CONTRACT_ADDRESS")
@@ -130,7 +129,7 @@ public class SgbNftMarketBot {
 
     private void processUnsubscribeCommand(MessageCreateEvent event) {
         if (event.getMessageAuthor().isServerAdmin() && event.getServer().isPresent()) {
-            String[] params = event.getMessageContent().split(" ");
+            var params = event.getMessageContent().split(" ");
 
             String contract = null;
 
@@ -160,12 +159,12 @@ public class SgbNftMarketBot {
 
     public Optional<SaleNotification> process(Transaction transaction, Network network) {
         try {
-            Optional<TransactionPattern> matchingTransactionPattern = transactionPatterns.stream()
+            var matchingTransactionPattern = transactionPatterns.stream()
                     .filter(pattern -> pattern.matches(transaction, network))
                     .findFirst();
 
             if (matchingTransactionPattern.isPresent()) {
-                SaleNotification saleNotification = matchingTransactionPattern.get().buildNotification(transaction);
+                var saleNotification = matchingTransactionPattern.get().buildNotification(transaction);
 
                 Set<Subscription> subscriptions = subscriptionService.getByContract(saleNotification.getContract().toLowerCase()).stream().collect(Collectors.toSet());
 
@@ -188,7 +187,7 @@ public class SgbNftMarketBot {
             return;
         }
 
-        Optional<Meta> meta = ipfsHelper.retreiveMetaFromCollection(contract, network);
+        var meta = ipfsHelper.retreiveMetaFromCollection(contract, network);
 
 
         subscriptionService.subscribeContract(contract, meta, channel, server);
@@ -222,9 +221,9 @@ public class SgbNftMarketBot {
         }
 
 
-        String tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
+        var tokenName = saleNotification.getSubscriptions().stream().findFirst().get().getTokenName();
 
-        Optional<String> metaUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId(), network);
+        var metaUri = ethHelper.getTokenUri(saleNotification.getContract(), saleNotification.getTokenId(), network);
         String metaIpfsUri = null;
 
         if (metaUri.isPresent()) {
@@ -233,19 +232,18 @@ public class SgbNftMarketBot {
             return;
         }
 
-        Optional<Meta> meta = ipfsHelper.getMeta(metaIpfsUri);
+        var meta = ipfsHelper.getMeta(metaIpfsUri);
 
-        if (!meta.isPresent()) {
+        if (meta.isEmpty()) {
             return;
         }
 
         Optional<byte[]> imageContent = ipfsHelper.get(meta.get().getImage());
 
-	String token = Network.FLARE.equals(network) ? "FLR" : "SGB";
+        var token = Network.FLARE.equals(network) ? "FLR" : "SGB";
 
-        EmbedBuilder embed = new EmbedBuilder()
+        var embed = new EmbedBuilder()
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
-                //.addField("Buyer", saleNotification.getBuyer())
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
                 .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " " + token)
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
@@ -261,11 +259,11 @@ public class SgbNftMarketBot {
         }
 
         saleNotification.getSubscriptions().forEach(subscription -> {
-            Optional<TextChannel> channel = discordApi.getTextChannelById(subscription.getChannelId());
+            var channel = discordApi.getTextChannelById(subscription.getChannelId());
             try {
-                if (channel.isPresent()) {
-                    channel.get().sendMessage(embed).join();
-                }
+             //   channel.ifPresent(textChannel -> textChannel.sendMessage(embed).join());
+
+                System.out.println("Send Message XXXXX");
             } catch (Exception e) {
                 log.error("Unable to send message triggered from transaction {} to channel {}", saleNotification.getTransactionHash(), channel.get().getIdAsString(), e);
             }
