@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
@@ -17,8 +19,8 @@ import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @Component
 @Slf4j
@@ -82,4 +84,76 @@ public class EthHelper {
             return songbirdWeb3;
         }
     }
+
+    public Double getNativeTokenUsdPrice(Network network) throws ExecutionException, InterruptedException {
+        var ftsoContract = getFtsoContract(network, 9);
+
+        var web3 = Network.FLARE.equals(network) ? flareWeb3 : songbirdWeb3;
+
+        org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                "getCurrentPrice",
+                Arrays.asList(),
+                Collections.singletonList(new TypeReference<Uint256>() {
+                }));
+
+        var encodedFunction = FunctionEncoder.encode(function);
+
+        org.web3j.protocol.core.methods.response.EthCall response =
+                web3.ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, ftsoContract, encodedFunction), DefaultBlockParameterName.LATEST)
+                        .sendAsync().get();
+
+        var someTypes = FunctionReturnDecoder.decode(
+                response.getValue(), function.getOutputParameters());
+
+
+        return ((Uint256) someTypes.get(0)).getValue().doubleValue() / 100000;
+    }
+
+    public String getFtsoContract(Network network, int index) throws ExecutionException, InterruptedException {
+
+        var web3 = Network.FLARE.equals(network) ? flareWeb3 : songbirdWeb3;
+
+        var ftsoManager = getFtsoManager(network);
+
+        org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                "getFtsos",
+                Arrays.asList(),
+                Collections.singletonList(new TypeReference<DynamicArray<Address>>() {
+                }));
+
+        var encodedFunction = FunctionEncoder.encode(function);
+
+        org.web3j.protocol.core.methods.response.EthCall response =
+                web3.ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, ftsoManager, encodedFunction), DefaultBlockParameterName.LATEST)
+                        .sendAsync().get();
+
+        var someTypes = FunctionReturnDecoder.decode(
+                response.getValue(), function.getOutputParameters());
+
+        return ((DynamicArray) ((List) someTypes).get(0)).getValue().get(index).toString();
+    }
+
+    private String getFtsoManager(Network network) throws ExecutionException, InterruptedException {
+        var web3 = Network.FLARE.equals(network) ? flareWeb3 : songbirdWeb3;
+
+        org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                "getFtsoManager",
+                Arrays.asList(),
+                Arrays.asList(new TypeReference<Address>() {
+                }));
+
+        var encodedFunction = FunctionEncoder.encode(function);
+
+        org.web3j.protocol.core.methods.response.EthCall response =
+                web3.ethCall(org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(null, "0x1000000000000000000000000000000000000003", encodedFunction),
+                                DefaultBlockParameterName.LATEST)
+                        .sendAsync().get();
+
+        var someTypes = FunctionReturnDecoder.decode(
+                response.getValue(), function.getOutputParameters());
+
+
+        return someTypes.get(0).toString();
+    }
+
 }

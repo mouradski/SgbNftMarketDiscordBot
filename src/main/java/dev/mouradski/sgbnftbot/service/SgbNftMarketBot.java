@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -75,7 +76,6 @@ public class SgbNftMarketBot {
                     processLisCommand(event);
                 }
             });
-
 
             Stream.of(Network.SONGBIRD, Network.FLARE).forEach(network ->
                     this.ethHelper.getFlowable(network).subscribe(transaction ->
@@ -199,7 +199,7 @@ public class SgbNftMarketBot {
         subscriptionService.unsubscribe(channel, contract);
     }
 
-    private void notifySale(SaleNotification saleNotification, Network network) throws IOException {
+    private void notifySale(SaleNotification saleNotification, Network network) throws IOException, ExecutionException, InterruptedException {
 
         if (discordApi == null) {
             return;
@@ -246,6 +246,7 @@ public class SgbNftMarketBot {
                 .setTitle(tokenName + " #" + saleNotification.getTokenId() + " has been sold !")
                 .addInlineField("Token ID", saleNotification.getTokenId().toString())
                 .addInlineField("Price", NUMBER_FORMAT.format(saleNotification.getPrice()) + " " + token)
+                .addInlineField("USD Price", NUMBER_FORMAT.format(saleNotification.getPrice() * ethHelper.getNativeTokenUsdPrice(network)) + " $")
                 .addInlineField("Marketplace", saleNotification.getMarketplace().toString())
                 .addInlineField("TransactionType", transactionTypeValue)
                 .addInlineField("Network", saleNotification.getNetwork().toString())
